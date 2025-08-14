@@ -118,6 +118,7 @@ let () =
   @@ Dream.router [
     Dream.get "/" (Dream.from_filesystem "static" "index.html");
     Dream.get "/css/**" (Dream.static "static/css");
+    Dream.get "/fonts/**" (Dream.static "static/fonts");
     Dream.get "/js/**" (Dream.static "static/js");
     Dream.get "/data/**" (Dream.static "data");
     Dream.get "/api/maps" (fun request ->
