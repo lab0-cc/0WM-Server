@@ -1,6 +1,7 @@
 [%%marshal.load Json]
 
 type point = { p_x: float [@json "x"]; p_y: float [@json "y"] } [@@marshal]
+type point3 = { p3_x: float [@json "x"]; p3_y: float [@json "y"]; p3_z: float [@json "z"] } [@@marshal]
 type vector = { v_x: float; v_y: float }
 type matrix = { m_a: float; m_b: float; m_c: float; m_d: float }
 type segment = { s_p1: point; s_p2: point; s_v: vector }

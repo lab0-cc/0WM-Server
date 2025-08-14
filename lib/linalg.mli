@@ -1,7 +1,10 @@
 (** This module implements linear algebra primitives *)
 
-(** The type of points *)
+(** The type of 2D points *)
 type point = { p_x: float; p_y: float } [@@marshal]
+
+(** The type of 3D points *)
+type point3 = { p3_x: float; p3_y: float; p3_z: float } [@@marshal]
 
 (** The type of vectors *)
 type vector = { v_x: float; v_y: float }
