@@ -86,6 +86,32 @@ let push_map { anchors = (a, a', a'' as anchors); shapes; floorplan = { data; wi
   end;
   html "ok"
 
+let scan data =
+  let open Commands in
+  let { s_pos; s_meas; _ } = [%decode.Json] ~v:data scan in
+  let ms = List.map Dot11_iwinfo.measurement s_meas in (** TODO: store *)
+  let top = match List.sort (fun Dot11.{ signal = s; _ } { signal = s'; _ } -> compare s' s) ms with
+    | m::m'::m''::_ -> [m; m'; m'']
+    | l -> l in
+  let d_meas = List.map (fun Dot11.{ ap = { ssid; channel; _ }; signal } ->
+                           { ssid; signal; band = Dot11.band_of_channel channel }) top in
+  let v = { d_pos = s_pos; d_meas } in
+  "DISP\000" ^ [%encode.Json] ~v disp
+
+let noap () =
+  "TRYL\000" ^ [%encode.Json] ~v:["http://ap.local"; "http://[fd40:134a:ffad::1]"] Gendarme.(list string)
+
+let rec live ws =
+  match%lwt Dream.receive ws with
+  | Some s -> begin
+      let%lwt () = match String.split_on_char '\000' s with
+      | "NOAP"::[] -> noap () |> Dream.send ws
+      | "SCAN"::data::[] -> scan data |> Dream.send ws
+      | _ -> failwith "Unknown command" in
+      live ws
+    end
+  | _ -> Dream.close_websocket ws
+
 let () =
   Dream.run ~interface:"127.0.0.1" ~port:8000
   @@ Dream.logger
@@ -106,5 +132,6 @@ let () =
       [%decode.Json] ~v payload |> push_map
     );
     Dream.options "/api/maps" (fun _ -> Dream.respond ~headers:[("Access-Control-Allow-Origin", "*"); ("Access-Control-Allow-Headers", "*")] ~status:`No_Content "");
+    Dream.get "/api/ws" (fun _ -> Dream.websocket live);
     Dream.get "/debug" (fun _ -> [%encode.Json] ~v:!rtree (Gendarme.option Zwmlib.Rtree.t) |> Dream.json)
   ]
