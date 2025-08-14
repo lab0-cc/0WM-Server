@@ -1,0 +1,3 @@
+[submodule "static"]
+	path = static
+	url = https://github.com/lab0-cc/0WM-Client

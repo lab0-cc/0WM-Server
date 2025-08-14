@@ -1,0 +1,4 @@
+(library
+ (name zwmlib)
+ (libraries base64 camlimages.core camlimages.jpeg camlimages.png gendarme gendarme-json str)
+ (preprocess (pps ppx_marshal)))

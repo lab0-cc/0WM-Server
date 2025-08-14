@@ -1,0 +1,4 @@
+(executable
+  (name zwm)
+  (libraries dream gendarme gendarme-json uuidm zwmlib)
+  (preprocess (pps lwt_ppx ppx_marshal)))
