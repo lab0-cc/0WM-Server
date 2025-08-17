@@ -14,12 +14,8 @@ let () =
   Dream.run ~interface:"127.0.0.1" ~port:8000
   @@ Dream.logger
   @@ Dream.router [
-    Dream.get "/" (Dream.from_filesystem "static" "index.html");
-    Dream.get "/css/**" (Dream.static "static/css");
-    Dream.get "/fonts/**" (Dream.static "static/fonts");
-    Dream.get "/js/**" (Dream.static "static/js");
     Dream.get "/data/**" (Dream.static "data");
-    Dream.get "/api/maps" (fun request ->
+    Dream.get "/maps" (fun request ->
       let latitude = get_float request "latitude" in
       let longitude = get_float request "longitude" in
       let altitude = get_float request "altitude" in
@@ -28,13 +24,13 @@ let () =
       let limit = get_int request "limit" in
       Api.get_maps ?latitude ?longitude ?altitude ?accuracy ?altitude_accuracy ?limit ()
     );
-    Dream.get "/api/maps/:id" (fun request -> Dream.param request "id" |> Api.get_map);
-    Dream.post "/api/maps" (fun req ->
+    Dream.get "/maps/:id" (fun request -> Dream.param request "id" |> Api.get_map);
+    Dream.post "/maps" (fun req ->
       let%lwt v = Dream.body req in
       [%decode.Json] ~v payload |> Api.push_map
     );
-    Dream.options "/api/maps" (fun _ -> Dream.respond ~headers:[("Access-Control-Allow-Origin", "*"); ("Access-Control-Allow-Headers", "*")] ~status:`No_Content "");
-    Dream.get "/api/ws" (fun _ -> Dream.websocket Ws.live);
+    Dream.options "/maps" (fun _ -> Dream.respond ~headers:[("Access-Control-Allow-Origin", "*"); ("Access-Control-Allow-Headers", "*")] ~status:`No_Content "");
+    Dream.get "/ws" (fun _ -> Dream.websocket Ws.live);
     Dream.get "/debug/rtree" (fun _ -> [%encode.Json] ~v:!Storage.rtree (Gendarme.option Zwmlib.Rtree.t) |> Dream.json);
     Dream.get "/debug/store" (fun _ -> [%encode.Json] ~v:Storage.store (Zwmlib.Object_store.t) |> Dream.json);
     Dream.get "/debug/measurements" (fun _ -> [%encode.Json] ~v:Storage.measurements (Zwmlib.Scan_store.t) |> Dream.json)
