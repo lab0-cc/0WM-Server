@@ -21,8 +21,6 @@ type t = { ssid: string option [@json]; bssid: string [@json];
            ht_operation: ht_oper option [@json]; vht_operation: vht_oper option [@json];
            encryption: encryption [@json] } [@@marshal]
 
-let of_json v = [%decode.Json] ~v t
-
 let ht_op { primary_channel; secondary_channel_offset; channel_width } =
   let ht_width = match channel_width with
     | 20 -> HT_20
