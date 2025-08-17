@@ -11,7 +11,7 @@ let get_int request parameter =
   Dream.query request parameter >>= int_of_string_opt
 
 let () =
-  Dream.run ~interface:"127.0.0.1" ~port:8000
+  Dream.run ~interface:Config.config.interface ~port:Config.config.port
   @@ Dream.logger
   @@ Dream.router [
     Dream.get "/data/**" (Dream.static "data");

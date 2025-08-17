@@ -36,7 +36,7 @@ let scan data ({ uuid } as context) = match uuid with
       ("DISP\000" ^ [%encode.Json] ~v disp, context)
 
 let noap context =
-  ("TRYL\000" ^ [%encode.Json] ~v:["http://127.0.0.1:8003"; "http://ap.local"; "http://[fd40:134a:ffad::1]"] Gendarme.(list string),
+  ("TRYL\000" ^ [%encode.Json] ~v:Config.config.aps Gendarme.(list string),
    context)
 
 let rec live ?(context=empty_context) ws =

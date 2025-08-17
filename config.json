@@ -1,0 +1,5 @@
+{
+    "interface": "127.0.0.1",
+    "port": 8000,
+    "aps": ["http://ap.local", "http://127.0.0.1:8003", "http://[fd40:134a:ffad::1]"]
+}
