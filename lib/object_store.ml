@@ -3,7 +3,7 @@
 type obj = { zmin: float [@json]; zmax: float [@json]; path: string [@json];
              anchors: Anchor.set [@json]; height: float [@json]; width: float [@json];
              shape: Geo.obj [@json] [@default Geo.Polygon []] } [@@marshal]
-type t = (string, obj) Hashtbl.t
+type t = (string, obj) Hashtbl.t [@@marshal]
 
 let find obj store = Hashtbl.find store obj
 

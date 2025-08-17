@@ -5,7 +5,7 @@ type obj = { zmin: float; zmax: float; path: string; anchors: Anchor.set; height
              width: float; shape: Geo.obj } [@@marshal]
 
 (** The type of object stores *)
-type t = (string, obj) Hashtbl.t
+type t = (string, obj) Hashtbl.t [@@marshal]
 
 (** Find an object in a store *)
 val find : string -> t -> obj
