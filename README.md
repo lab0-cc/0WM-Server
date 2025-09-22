@@ -2,6 +2,8 @@
 
 This repository contains the sources for the 0WM server. The 0WM project is far from being production-grade yet, but some of its components are already testable.
 
+To read more about the project, please consult [its main web page](https://0wm.lab0.cc).
+
 ## Getting 0WM running
 
 Currently, 0WM is not packaged and some of its dependencies are not live on OPAM. Therefore, a few manual operations are needed. We give here the required commands to get started on a fresh Debian Trixie container:
