@@ -35,12 +35,12 @@ let get_map id =
   let v = Object_store.find id Storage.store in
   [%encode.Json] ~v Object_store.obj |> json
 
-let process_shapes m d =
+let process_shapes m =
   let rec process_shapes_rec acc = function
     | []::_ | (_::[])::_ -> failwith "process_shapes"
     | (_::_::[])::tl -> process_shapes_rec acc tl
     | shape::tl ->
-        process_shapes_rec (List.map (fun p -> app m p |> tran d |> Geo.ll_of_xy) shape::acc) tl
+        process_shapes_rec (List.map (fun p -> Matrix3.apply_p2 p m |> Geo.ll_of_xy) shape::acc) tl
     | [] -> acc in
   process_shapes_rec []
 
@@ -50,20 +50,23 @@ let push_map { anchors = (a, a', a'' as anchors); shapes; floorplan = { data; wi
     Anchor.(to_points a, to_points a', to_points a'') in
   let id = Uuidm.(v4_gen (Random.State.make_self_init ()) () |> to_string) in
   let path = Image.(of_base64 data |> save id) in
-  let src_v = vec src src' in
-  let src_v' = vec src src'' in
-  let dst_v = vec dst dst' in
-  let dst_v' = vec dst dst'' in
-  let det = det src_v src_v' in
+  let src_v = Vector2.of_points src src' in
+  let src_v' = Vector2.of_points src src'' in
+  let dst_v = Vector2.of_points dst dst' in
+  let dst_v' = Vector2.of_points dst dst'' in
+  let det = Vector2.cross src_v src_v' in
   if Float.abs det < 1e-12
   then failwith "The given anchors are colinear";
-  let m = { m_a = (dst_v.v_x *. src_v'.v_y -. dst_v'.v_x *. src_v.v_y) /. det;
-            m_b = (dst_v'.v_x *. src_v.v_x -. dst_v.v_x *. src_v'.v_x) /. det;
-            m_c = (dst_v.v_y *. src_v'.v_y -. dst_v'.v_y *. src_v.v_y) /. det;
-            m_d = (dst_v'.v_y *. src_v.v_x -. dst_v.v_y *. src_v'.v_x) /. det } in
-  let d = { v_x = dst.p_x -. m.m_a *. src.p_x -. m.m_b *. src.p_y;
-            v_y = dst.p_y -. m.m_c *. src.p_x -. m.m_d *. src.p_y } in
-  let shape = match process_shapes m d shapes with
+  let m = Matrix3.{ m_a = (dst_v.p_x *. src_v'.p_y -. dst_v'.p_x *. src_v.p_y) /. det;
+                    m_b = (dst_v'.p_x *. src_v.p_x -. dst_v.p_x *. src_v'.p_x) /. det;
+                    m_c = 0.;
+                    m_d = (dst_v.p_y *. src_v'.p_y -. dst_v'.p_y *. src_v.p_y) /. det;
+                    m_e = (dst_v'.p_y *. src_v.p_x -. dst_v.p_y *. src_v'.p_x) /. det;
+                    m_f = 0.;
+                    m_g = 0.; m_h = 0.; m_i = 1. } in
+  let src' = Matrix3.apply_v2 src m in
+  let m = { m with m_c = dst.p_x -. src'.p_x; m_f = dst.p_y -. src'.p_y } in
+  let shape = match process_shapes m shapes with
     | shape::[] -> Geo.Polygon shape
     | shapes -> Multi_polygon shapes in
   Object_store.(push id { zmin; zmax; path; anchors; shape; width; height } Storage.store);

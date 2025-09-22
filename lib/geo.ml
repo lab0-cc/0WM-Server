@@ -76,16 +76,17 @@ let obj_distance p = function
       (* Recursively compute the winding number and the minimal segment distance *)
       let (_, wn, d) = List.fold_left (fun (pt, wn, d) pt' ->
         let pt' = xy_of_ll pt' in
-        let d = seg pt pt' |> psclosest p_xy |> ll_of_xy |> distance p |> Float.min d in
+        let d = Segment2.of_points pt pt' |> Segment2.closest p_xy |> ll_of_xy |> distance p
+                |> Float.min d in
         if pt.p_y <= p_xy.p_y
         then
-          if pt.p_y > p_xy.p_y && det (vec pt pt') (vec pt p_xy) > 0.
+          if pt.p_y > p_xy.p_y && Vector2.(cross (of_points pt pt') (of_points pt p_xy)) > 0.
           then (pt', wn + 1, d)
           else (pt', wn, d)
         else
           if pt'.p_y <= p_xy.p_y
           then
-            if det (vec pt pt') (vec pt p_xy) < 0.
+            if Vector2.(cross (of_points pt pt') (of_points pt p_xy)) < 0.
             then (pt', wn - 1, d)
             else (pt', wn, d)
           else (pt', wn, d))
