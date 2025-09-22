@@ -1,9 +1,36 @@
-open Zwmlib
 open Types
+open Zwmlib
 open Linalg
+open Types
 
 let json = Dream.json ~headers:[("Access-Control-Allow-Origin", "*")]
 let html = Dream.html ~headers:[("Access-Control-Allow-Origin", "*")]
+let svg s = Dream.response ~headers:[("Content-Type", "image/svg+xml");
+                                     ("Access-Control-Allow-Origin", "*")] s |> Lwt.return
+
+let get_heatmap_s ~ssids id =
+  let t = Hashtbl.create 10 in
+  Hashtbl.find_all Storage.measurements id
+  |> List.iter (fun Scan_store.{ position = { p3_x; p3_z; _ }; measurements; _ } ->
+       List.iter (fun Dot11.{ ap; signal } -> match ap.ssid with
+         | Some ssid when List.mem ssid ssids ->
+             let f = Dot11.center_freq ap in
+             let l = Hashtbl.find_opt t f |> Option.value ~default:[] in
+             Hashtbl.replace t (Dot11.center_freq ap)
+                             ({ s_p = { p_x = p3_x; p_y = p3_z }; s_dbm = float signal }::l)
+         | _ -> ()
+       ) measurements
+     );
+  let spectrum = Hashtbl.fold
+                   (fun f s_samples acc -> { s_freq = float f; s_samples; s_aps = [] }::acc) t [] in
+  let env = { walls = []; spectrum } in
+  let render_cfg = Render.{ resolution = 0.02; padding = 5.; scale = 40.0; steps = 0; vmin = -90.;
+                            vmax = -30.; minimal = true } in
+  let sim_cfg = Sim.{ exponent = 2.0; precision = 0.25; norm = 10.; blend_sharpness = 2. } in
+  let f = Sim.build_predictor ~cfg:sim_cfg env in
+  Render.render ~cfg:render_cfg ~f env
+
+let get_heatmap ~ssids id = let (img, _) = get_heatmap_s ~ssids id in svg img
 
 let get_maps ?latitude ?longitude ?altitude ?(accuracy=0.) ?(altitude_accuracy=0.) ?(limit=10) () =
   match !Storage.rtree, latitude, longitude with

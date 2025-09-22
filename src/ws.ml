@@ -39,6 +39,12 @@ let noap context =
   ("TRYL\000" ^ [%encode.Json] ~v:Config.config.aps Gendarme.(list string),
    context)
 
+let rqht ({ uuid } as context) = match uuid with
+  | None -> failwith "No UUID"
+  | Some uuid ->
+      ("HEAT\000" ^ [%encode.Json] ~v:(Api.get_heatmap_s ~ssids:Config.config.ssids uuid)
+                                   Gendarme.(pair string (Linalg.Box2.t)), context)
+
 let rec live ?(context=empty_context) ws =
   match%lwt Dream.receive ws with
   | Some s -> begin
@@ -46,6 +52,7 @@ let rec live ?(context=empty_context) ws =
         | "INIT"::[] -> init ?id:None
         | "INIT"::id::[] -> init ~id
         | "NOAP"::[] -> noap
+        | "RQHT"::[] -> rqht
         | "SCAN"::data::[] -> scan data
         | _ -> failwith "Unknown command" in
       let (payload, context) = command context in

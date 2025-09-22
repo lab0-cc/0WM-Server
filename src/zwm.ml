@@ -15,6 +15,10 @@ let () =
   @@ Dream.logger
   @@ Dream.router [
     Dream.get "/data/**" (Dream.static "data");
+    Dream.get "/heatmaps/:id" (fun request ->
+      let ssids = Dream.queries request "ssid" in
+      Dream.param request "id" |> Api.get_heatmap ~ssids
+    );
     Dream.get "/maps" (fun request ->
       let latitude = get_float request "latitude" in
       let longitude = get_float request "longitude" in
