@@ -45,7 +45,7 @@ type f_6_ops = { f_6_he: he_op; f_6_eht: eht_op option }
 type ops = Ops_2_4 of f_2_4_ops | Ops_5 of f_5_ops | Ops_6 of f_6_ops
 
 (** Return the bandwidth from operation fields *)
-val width_of_dot11_ops_opt : ops -> int option
+val width_of_dot11_ops : ops -> int
 
 (** Return the channel occupation ranges from operation fields *)
 val ranges_of_dot11_ops_opt : ops -> (int * int) list option
@@ -74,6 +74,9 @@ type encryption = { protocols: protocol list; auth: auth option list; ciphers: c
 (** The type of APs *)
 type ap = { ssid: string option; bssid: string; channel: channel; ops: ops;
             encryption: encryption option }
+
+(** Return the center frequency of the AP in Hz *)
+val center_freq : ap -> int
 
 (** The type of AP measurements *)
 type measurement = { ap: ap; signal: int } [@@marshal]

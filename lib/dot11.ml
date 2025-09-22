@@ -92,15 +92,15 @@ type f_6_ops = { f_6_he: he_op [@json]; f_6_eht: eht_op option [@json] } [@@mars
 
 type ops = Ops_2_4 of f_2_4_ops | Ops_5 of f_5_ops | Ops_6 of f_6_ops [@@marshal]
 
-let width_of_dot11_ops_opt = function
-  | Ops_2_4 { f_2_4_eht = Some op; _ } -> Some (width_of_eht_op op)
-  | Ops_2_4 { f_2_4_ht = Some op; _ } -> Some (width_of_ht_op op)
-  | Ops_5 { f_5_eht = Some op; _ } -> Some (width_of_eht_op op)
-  | Ops_5 { f_5_vht = Some op; _ } -> Some (width_of_vht_op op)
-  | Ops_5 { f_5_ht = Some op; _ } -> Some (width_of_ht_op op)
-  | Ops_6 { f_6_eht = Some op; _ } -> Some (width_of_eht_op op)
-  | Ops_6 { f_6_he; _ } -> Some (width_of_he_op f_6_he)
-  | _ -> None
+let width_of_dot11_ops = function
+  | Ops_2_4 { f_2_4_eht = Some op; _ } -> width_of_eht_op op
+  | Ops_2_4 { f_2_4_ht = Some op; _ } -> width_of_ht_op op
+  | Ops_5 { f_5_eht = Some op; _ } -> width_of_eht_op op
+  | Ops_5 { f_5_vht = Some op; _ } -> width_of_vht_op op
+  | Ops_5 { f_5_ht = Some op; _ } -> width_of_ht_op op
+  | Ops_6 { f_6_eht = Some op; _ } -> width_of_eht_op op
+  | Ops_6 { f_6_he; _ } -> width_of_he_op f_6_he
+  | _ -> 20
 
 let ranges_of_dot11_ops_opt = function
   | Ops_2_4 { f_2_4_eht = Some op; _ } -> Some (ranges_of_eht_op op)
@@ -132,5 +132,14 @@ type ap = { ssid: string option [@json]; bssid: string [@json];
             channel: channel [@json] [@default Chan_2_4 (-1)];
             ops: ops [@json] [@default Ops_2_4 (Gendarme.get f_2_4_ops)];
             encryption: encryption option [@json] } [@@marshal]
+
+let center_freq { channel; ops; _ } =
+  let offset = match ops with
+    | Ops_2_4 _ -> 2_407_000
+    | Ops_5 _ -> 5_000_000
+    | Ops_6 _ -> 5_950_000 in
+  match ranges_of_dot11_ops_opt ops with
+    | Some ((min, max)::[]) | Some ((min, _)::(_, max)::[]) -> offset + 2500 * (min + max)
+    | _ -> offset + 5000 * (function Chan_2_4 i | Chan_5 i | Chan_6 i -> i) channel
 
 type measurement = { ap: ap [@json]; signal: int [@json] } [@@marshal]
