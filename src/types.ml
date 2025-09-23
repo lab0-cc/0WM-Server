@@ -4,7 +4,7 @@ open Zwmlib.Linalg
 
 type map = { m_dst: float [@json "distance"];
              m_cfd: Zwmlib.Confidence.t [@json "confidence"] [@default Invalid];
-             m_nam: string [@json "name"] } [@@marshal]
+             m_id: string [@json "id"] } [@@marshal]
 
 type floorplan = { height: float [@json];
                    width: float [@json];

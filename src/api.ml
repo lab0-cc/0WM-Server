@@ -39,8 +39,8 @@ let get_maps ?latitude ?longitude ?altitude ?(accuracy=0.) ?(altitude_accuracy=0
       [%encode.Json] ?v:(Option.map Rtree.to_list tree) Gendarme.(list string) |> json
   | Some rtree, Some lat, Some long ->
       Rtree.sort ~limit (Geo.{ lat; long }) rtree Storage.store
-      |> List.map (fun (m_dst, m_nam) ->
-        let obj = Object_store.find m_nam Storage.store in
+      |> List.map (fun (m_dst, m_id) ->
+        let obj = Object_store.find m_id Storage.store in
         let m_cfd =
           if m_dst <= accuracy
           then match altitude with
@@ -50,7 +50,7 @@ let get_maps ?latitude ?longitude ?altitude ?(accuracy=0.) ?(altitude_accuracy=0
                 then Valid3D
                 else Valid2D
           else Invalid in
-        { m_dst; m_cfd; m_nam })
+        { m_dst; m_cfd; m_id })
       |> List.sort
            (fun { m_dst; m_cfd; _ } { m_dst = m_dst'; m_cfd = m_cfd'; _ } ->
              match Confidence.compare m_cfd m_cfd' with
@@ -72,7 +72,7 @@ let process_shapes m =
   process_shapes_rec []
 
 let push_map { anchors = (a, a', a'' as anchors); shapes; floorplan = { data; width; height };
-               zmin; zmax; _ } =
+               zmin; zmax; name } =
   let ((src, dst), (src', dst'), (src'', dst'')) =
     Anchor.(to_points a, to_points a', to_points a'') in
   let id = Uuidm.(v4_gen (Random.State.make_self_init ()) () |> to_string) in
@@ -96,7 +96,7 @@ let push_map { anchors = (a, a', a'' as anchors); shapes; floorplan = { data; wi
   let shape = match process_shapes m shapes with
     | shape::[] -> Geo.Polygon shape
     | shapes -> Multi_polygon shapes in
-  Object_store.(push id { zmin; zmax; path; anchors; shape; width; height } Storage.store);
+  Object_store.(push id { zmin; zmax; path; anchors; shape; width; height; name } Storage.store);
   begin match !Storage.rtree with
   | None -> Storage.rtree := Some (Rtree.singleton id)
   | Some r -> Storage.rtree := Some (Rtree.add id r Storage.store)
