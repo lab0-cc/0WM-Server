@@ -90,10 +90,10 @@ module Segment2 = struct
   let closest p ({ s_start; _ } as s) =
     let v = vec s in
     let t = Math.clamp ~min:0. ~max:1. (Vector2.((of_points s_start p |> dot v) /. sqnorm v)) in
-    Vector2.(scaled t v |> plus s_start |> minus p)
+    Vector2.(scaled t v |> plus s_start)
 
   (** Get the square distance between a point and a segment *)
-  let sqdist_p p s = closest p s |> Vector2.sqnorm
+  let sqdist_p p s = Vector2.(closest p s |> minus p |> sqnorm)
 end
 
 module Box2 = struct
