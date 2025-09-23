@@ -32,35 +32,52 @@ let get_heatmap_s ~ssids id =
 
 let get_heatmap ~ssids id = let (img, _) = get_heatmap_s ~ssids id in svg img
 
-let get_maps ?latitude ?longitude ?altitude ?(accuracy=0.) ?(altitude_accuracy=0.) ?(limit=10) () =
-  match !Storage.rtree, latitude, longitude with
-  | None, _, _ -> [%encode.Json] Gendarme.empty_list |> json
-  | tree, None, _ | tree, _, None ->
-      [%encode.Json] ?v:(Option.map Rtree.to_list tree) Gendarme.(list string) |> json
-  | Some rtree, Some lat, Some long ->
-      Rtree.sort ~limit (Geo.{ lat; long }) rtree Storage.store
-      |> List.map (fun (m_dst, m_id) ->
-        let obj = Object_store.find m_id Storage.store in
-        let m_cfd =
-          if m_dst <= accuracy
-          then match altitude with
-            | None -> Confidence.Valid2D
-            | Some alt ->
-                if alt +. altitude_accuracy >= obj.zmin && alt -. altitude_accuracy < obj.zmax
-                then Valid3D
-                else Valid2D
-          else Invalid in
-        { m_dst; m_cfd; m_id })
-      |> List.sort
-           (fun { m_dst; m_cfd; _ } { m_dst = m_dst'; m_cfd = m_cfd'; _ } ->
-             match Confidence.compare m_cfd m_cfd' with
-             | 0 -> compare m_dst m_dst'
-             | i -> i)
-      |> fun v -> [%encode.Json] ~v (Gendarme.list map) |> json
+let get_map_s id = Object_store.find id Storage.store
 
-let get_map id =
-  let v = Object_store.find id Storage.store in
-  [%encode.Json] ~v Object_store.obj |> json
+let get_map id = [%encode.Json] ~v:(get_map_s id) Object_store.obj |> json
+
+let format_map_sl recurse v =
+  let res =
+    if recurse
+    then
+      let v = List.map (fun id -> (id, get_map_s id)) v
+              |> List.sort (fun (_, Object_store.{ name; _ }) (_, { name = name'; _ }) ->
+                   compare name name') in
+      [%encode.Json] ~v Gendarme.(map string Object_store.obj)
+    else [%encode.Json] ~v Gendarme.(list string) in
+  json res
+
+let get_maps ?latitude ?longitude ?altitude ?(accuracy=0.) ?(altitude_accuracy=0.) ?(limit=10)
+             recurse () = match !Storage.rtree, latitude, longitude with
+  | None, _, _ -> [%encode.Json] Gendarme.empty_list |> json
+  | Some rtree, None, _ | Some rtree, _, None -> Rtree.to_list rtree |> format_map_sl recurse
+  | Some rtree, Some lat, Some long ->
+      let maps = Rtree.sort ~limit (Geo.{ lat; long }) rtree Storage.store
+        |> List.map (fun (distance, id) ->
+          let obj = get_map_s id in
+          let confidence =
+            if distance <= accuracy
+            then match altitude with
+              | None -> Confidence.Valid2D
+              | Some alt ->
+                  if alt +. altitude_accuracy >= obj.zmin && alt -. altitude_accuracy < obj.zmax
+                  then Valid3D
+                  else Valid2D
+            else Invalid in
+          (id, obj, distance, confidence))
+        |> List.sort
+             (fun (_, _, distance, confidence) (_, _, distance', confidence') ->
+               match Confidence.compare confidence confidence' with
+               | 0 -> compare distance distance'
+               | i -> i) in
+      if recurse
+      then
+        let v = List.map (fun (id, mr_map, mr_dst, mr_cfd) -> (id, { mr_dst; mr_cfd; mr_map }))
+                         maps in
+        [%encode.Json] ~v (Gendarme.map Gendarme.string map_rec) |> json
+      else
+        let v = List.map (fun (id, _, m_dst, m_cfd) -> (id, { m_dst; m_cfd })) maps in
+        [%encode.Json] ~v (Gendarme.map Gendarme.string map) |> json
 
 let process_shapes m =
   let rec process_shapes_rec acc = function
