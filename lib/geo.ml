@@ -92,7 +92,7 @@ let obj_distance p = function
           else (pt', wn, d))
         (List.rev l |> List.hd |> xy_of_ll, 0, infinity) l in
       (* A 0 winding number means the point is within the polygon *)
-      if wn = 0 then d else 0.
+      if wn = 0 then 0. else d
   | Multi_polygon _ -> failwith "obj_distance/Multi_polygon: Not implemented"
 
 let area = function
