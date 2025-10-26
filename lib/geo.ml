@@ -80,7 +80,7 @@ let obj_distance p = function
                 |> Float.min d in
         if pt.p_y <= p_xy.p_y
         then
-          if pt.p_y > p_xy.p_y && Vector2.(cross (of_points pt pt') (of_points pt p_xy)) > 0.
+          if pt'.p_y > p_xy.p_y && Vector2.(cross (of_points pt pt') (of_points pt p_xy)) > 0.
           then (pt', wn + 1, d)
           else (pt', wn, d)
         else
@@ -91,8 +91,8 @@ let obj_distance p = function
             else (pt', wn, d)
           else (pt', wn, d))
         (List.rev l |> List.hd |> xy_of_ll, 0, infinity) l in
-      (* A 0 winding number means the point is within the polygon *)
-      if wn = 0 then 0. else d
+      (* A 0 winding number means the point is outside the polygon *)
+      if wn = 0 then d else 0.
   | Multi_polygon _ -> failwith "obj_distance/Multi_polygon: Not implemented"
 
 let area = function
