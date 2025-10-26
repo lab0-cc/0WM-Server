@@ -47,8 +47,9 @@ let format_map_sl recurse v =
     else [%encode.Json] ~v Gendarme.(list string) in
   json res
 
-let get_maps ?latitude ?longitude ?altitude ?(accuracy=0.) ?(altitude_accuracy=0.) ?(limit=10)
+let get_maps ?latitude ?longitude ?altitude ?(accuracy=0.) ?(altitude_accuracy=0.) ?(limit=1000)
              recurse () = match !Storage.rtree, latitude, longitude with
+  | None, _, _ when recurse -> [%encode.Json] ~v:[] Gendarme.(map string string) |> json
   | None, _, _ -> [%encode.Json] Gendarme.empty_list |> json
   | Some rtree, None, _ | Some rtree, _, None -> Rtree.to_list rtree |> format_map_sl recurse
   | Some rtree, Some lat, Some long ->
@@ -58,11 +59,9 @@ let get_maps ?latitude ?longitude ?altitude ?(accuracy=0.) ?(altitude_accuracy=0
           let confidence =
             if distance <= accuracy
             then match altitude with
-              | None -> Confidence.Valid2D
-              | Some alt ->
-                  if alt +. altitude_accuracy >= obj.zmin && alt -. altitude_accuracy < obj.zmax
-                  then Valid3D
-                  else Valid2D
+              | Some alt when alt +. altitude_accuracy >= obj.zmin
+                              && alt -. altitude_accuracy < obj.zmax -> Confidence.Valid3D
+              | _ -> Valid2D
             else Invalid in
           (id, obj, distance, confidence))
         |> List.sort
