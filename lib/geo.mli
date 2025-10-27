@@ -30,3 +30,6 @@ val obj_distance : point -> obj -> float
 
 (** Compute a bounding box area *)
 val box_area : box -> float
+
+(** Extract all the segments of a shape *)
+val segments : obj -> Linalg.Segment2.t list

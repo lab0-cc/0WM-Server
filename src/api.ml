@@ -8,9 +8,13 @@ let html = Dream.html ~headers:[("Access-Control-Allow-Origin", "*")]
 let svg s = Dream.response ~headers:[("Content-Type", "image/svg+xml");
                                      ("Access-Control-Allow-Origin", "*")] s |> Lwt.return
 
+let get_map_s id = Object_store.find id Storage.store
+
+let get_map id = [%encode.Json] ~v:(get_map_s id) Object_store.obj |> json
+
 let get_heatmap_s ~ssids id =
   let t = Hashtbl.create 10 in
-  let (_, scans) = Scan_store.find id Storage.measurements in
+  let (meta, scans) = Scan_store.find id Storage.measurements in
   List.iter (fun Scan_store.{ position = { p3_x; p3_z; _ }; measurements; _ } ->
     List.iter (fun Dot11.{ ap; signal } -> match ap.ssid with
       | Some ssid when List.mem ssid ssids ->
@@ -22,18 +26,21 @@ let get_heatmap_s ~ssids id =
     ) measurements) scans;
   let spectrum = Hashtbl.fold
                    (fun f s_samples acc -> { s_freq = float f; s_samples; s_aps = [] }::acc) t [] in
-  let env = { walls = []; spectrum } in
-  let render_cfg = Render.{ resolution = 0.02; padding = 5.; scale = 40.0; steps = 0; vmin = -90.;
+  let walls = match meta with
+    | Some meta ->
+        let Object_store.{ structure; walls; _ } = get_map_s meta.map in
+        Geo.segments structure @ walls
+        |> List.map (fun s -> { w_seg = Matrix3.apply_s2 s meta.transform; w_tran = 0.6;
+                                w_refl = 0.3 })
+    | None -> [] in
+  let env = { walls; spectrum } in
+  let render_cfg = Render.{ resolution = 0.2; padding = 5.; scale = 40.0; steps = 0; vmin = -90.;
                             vmax = -30.; minimal = true } in
   let sim_cfg = Sim.{ exponent = 2.0; precision = 0.25; norm = 10.; blend_sharpness = 2. } in
   let f = Sim.build_predictor ~cfg:sim_cfg env in
   Render.render ~cfg:render_cfg ~f env
 
 let get_heatmap ~ssids id = let (img, _) = get_heatmap_s ~ssids id in svg img
-
-let get_map_s id = Object_store.find id Storage.store
-
-let get_map id = [%encode.Json] ~v:(get_map_s id) Object_store.obj |> json
 
 let format_map_sl recurse v =
   let res =

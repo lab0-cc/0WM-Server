@@ -103,3 +103,17 @@ let area = function
   | Multi_polygon _ -> failwith "Not implemented"
 
 let box_area box = Bounding_box box |> area
+
+let rec segments = function
+  | Bounding_box { sw; ne } ->
+      let sw = xy_of_ll sw in
+      let ne = xy_of_ll ne in
+      let nw = { p_x = sw.p_x; p_y = ne.p_y } in
+      let se = { p_x = ne.p_x; p_y = sw.p_y } in
+      Segment2.[of_points sw nw; of_points nw ne; of_points ne se; of_points se sw]
+  | Polygon l ->
+      let (_, segments) = List.fold_left (fun (pt, acc) pt' ->
+        let pt' = xy_of_ll pt' in
+        (pt', Segment2.of_points pt pt'::acc)) (List.rev l |> List.hd |> xy_of_ll, []) l in
+      segments
+  | Multi_polygon l -> List.concat_map (fun p -> segments (Polygon p)) l
