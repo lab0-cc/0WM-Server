@@ -48,7 +48,7 @@ end
 
 module Segment2 = struct
   (** The type of 2D segments *)
-  type t = { s_start: point; s_end: point }
+  type t = { s_start: point [@json "start"]; s_end: point [@json "end"] } [@@marshal]
 
   (** Get the segment from the first point to the second *)
   let of_points s_start s_end = { s_start; s_end }
@@ -121,9 +121,9 @@ end
 
 module Matrix3 = struct
   (** The type of 3×3 matrices *)
-  type t = { m_a: float; m_b: float; m_c: float;
-             m_d: float; m_e: float; m_f: float;
-             m_g: float; m_h: float; m_i: float }
+  type t = { m_a: float [@json "a"]; m_b: float [@json "b"]; m_c: float [@json "c"];
+             m_d: float [@json "d"]; m_e: float [@json "e"]; m_f: float [@json "f"];
+             m_g: float [@json "g"]; m_h: float [@json "h"]; m_i: float [@json "i"] } [@@marshal]
 
   (** Identity matrix *)
   let one = { m_a = 1.; m_b = 0.; m_c = 0.;

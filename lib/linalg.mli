@@ -36,7 +36,7 @@ end
 
 module Segment2 : sig
   (** The type of segments *)
-  type t = { s_start : point; s_end : point }
+  type t = { s_start : point; s_end : point } [@@marshal]
 
   (** Get the segment from the first point to the second *)
   val of_points : point -> point -> t
@@ -78,7 +78,7 @@ module Matrix3 : sig
   (** The type of 3×3 matrices *)
   type t = { m_a : float; m_b : float; m_c : float;
              m_d : float; m_e : float; m_f : float;
-             m_g : float; m_h : float; m_i : float }
+             m_g : float; m_h : float; m_i : float } [@@marshal]
 
   (** Build a matrix from a translation vector *)
   val of_translation : point -> t
