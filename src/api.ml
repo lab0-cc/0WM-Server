@@ -10,17 +10,16 @@ let svg s = Dream.response ~headers:[("Content-Type", "image/svg+xml");
 
 let get_heatmap_s ~ssids id =
   let t = Hashtbl.create 10 in
-  Hashtbl.find_all Storage.measurements id
-  |> List.iter (fun Scan_store.{ position = { p3_x; p3_z; _ }; measurements; _ } ->
-       List.iter (fun Dot11.{ ap; signal } -> match ap.ssid with
-         | Some ssid when List.mem ssid ssids ->
-             let f = Dot11.center_freq ap in
-             let l = Hashtbl.find_opt t f |> Option.value ~default:[] in
-             Hashtbl.replace t (Dot11.center_freq ap)
-                             ({ s_p = { p_x = p3_x; p_y = p3_z }; s_dbm = float signal }::l)
-         | _ -> ()
-       ) measurements
-     );
+  let (_, scans) = Scan_store.find id Storage.measurements in
+  List.iter (fun Scan_store.{ position = { p3_x; p3_z; _ }; measurements; _ } ->
+    List.iter (fun Dot11.{ ap; signal } -> match ap.ssid with
+      | Some ssid when List.mem ssid ssids ->
+          let f = Dot11.center_freq ap in
+          let l = Hashtbl.find_opt t f |> Option.value ~default:[] in
+          Hashtbl.replace t (Dot11.center_freq ap)
+                          ({ s_p = { p_x = p3_x; p_y = p3_z }; s_dbm = float signal }::l)
+      | _ -> ()
+    ) measurements) scans;
   let spectrum = Hashtbl.fold
                    (fun f s_samples acc -> { s_freq = float f; s_samples; s_aps = [] }::acc) t [] in
   let env = { walls = []; spectrum } in

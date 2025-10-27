@@ -19,11 +19,11 @@ let init ?id _ =
     | None -> uuid () in
   ("UUID\000" ^ [%encode.Json] ~v Gendarme.string,  { uuid = Some v })
 
-let scan data ({ uuid } as context) = match uuid with
+let scan v ({ uuid } as context) = match uuid with
   | None -> failwith "No UUID"
   | Some uuid ->
       let open Commands in
-      let { s_pos; s_ts; s_meas } = [%decode.Json] ~v:data scan in
+      let { s_pos; s_ts; s_meas } = [%decode.Json] ~v scan in
       let measurements = List.map Dot11_iwinfo.measurement s_meas in
       Scan_store.push uuid { position = s_pos; timestamp = s_ts; measurements} Storage.measurements;
       let top = match List.sort (fun Dot11.{ signal = s; _ } { signal = s'; _ } -> compare s' s)
@@ -34,6 +34,13 @@ let scan data ({ uuid } as context) = match uuid with
                                { ssid; signal; band = Dot11.band_of_channel channel }) top in
       let v = { d_pos = s_pos; d_meas } in
       ("DISP\000" ^ [%encode.Json] ~v disp, context)
+
+let meta v ({ uuid } as context) = match uuid with
+  | None -> failwith "No UUID"
+  | Some uuid ->
+      let metadata = [%decode.Json] ~v Scan_store.metadata in
+      Scan_store.meta uuid metadata Storage.measurements;
+      ("", context)
 
 let noap context =
   ("TRYL\000" ^ [%encode.Json] ~v:Config.config.aps Gendarme.(list string),
@@ -51,12 +58,16 @@ let rec live ?(context=empty_context) ws =
       let command = match String.split_on_char '\000' s with
         | "INIT"::[] -> init ?id:None
         | "INIT"::id::[] -> init ~id
+        | "META"::metadata::[] -> meta metadata
         | "NOAP"::[] -> noap
         | "RQHT"::[] -> rqht
         | "SCAN"::data::[] -> scan data
         | _ -> failwith "Unknown command" in
       let (payload, context) = command context in
-      let%lwt () = Dream.send ws payload in
+      let promise = match payload with
+        | "" -> Lwt.return ()
+        | _ -> Dream.send ws payload in
+      let%lwt () = promise in
       live ~context ws
     end
   | _ -> Dream.close_websocket ws
