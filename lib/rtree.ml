@@ -9,7 +9,7 @@ let max_children = 4
 
 let geo_of store = function
   | Node (box, _) -> Geo.Bounding_box box
-  | Leaf ref -> let { Object_store.shape; _ } = Object_store.find ref store in shape
+  | Leaf ref -> (Object_store.find ref store).structure
 
 let sort ?(limit=100) p tree store =
   let rec sort_rec acc =

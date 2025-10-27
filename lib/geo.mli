@@ -13,6 +13,9 @@ type obj = Bounding_box of box | Polygon of point list
 (** Convert an x/y point to a longitude/latitude one *)
 val ll_of_xy : Linalg.point -> point
 
+(** Convert a longitude/latitude point to an x/y one *)
+val xy_of_ll : point -> Linalg.point
+
 (** Compute the bounding box of a shape *)
 val bounding_box : obj -> box
 

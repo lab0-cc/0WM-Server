@@ -87,8 +87,8 @@ let process_shapes m =
     | [] -> acc in
   process_shapes_rec []
 
-let push_map { anchors = (a, a', a'' as anchors); shapes; floorplan = { data; width; height };
-               zmin; zmax; name } =
+let push_map { anchors = (a, a', a'' as anchors); structure; walls;
+               floorplan = { data; width; height }; zmin; zmax; name } =
   let ((src, dst), (src', dst'), (src'', dst'')) =
     Anchor.(to_points a, to_points a', to_points a'') in
   let id = Uuidm.(v4_gen (Random.State.make_self_init ()) () |> to_string) in
@@ -109,10 +109,14 @@ let push_map { anchors = (a, a', a'' as anchors); shapes; floorplan = { data; wi
                     m_g = 0.; m_h = 0.; m_i = 1. } in
   let src' = Matrix3.apply_v2 src m in
   let m = { m with m_c = dst.p_x -. src'.p_x; m_f = dst.p_y -. src'.p_y } in
-  let shape = match process_shapes m shapes with
+  let structure = match process_shapes m structure with
     | shape::[] -> Geo.Polygon shape
     | shapes -> Multi_polygon shapes in
-  Object_store.(push id { zmin; zmax; path; anchors; shape; width; height; name } Storage.store);
+  let walls = process_shapes m walls |> List.map (function
+    | hd::hd'::[] -> Segment2.of_points (Geo.xy_of_ll hd) (Geo.xy_of_ll hd')
+    | _ -> failwith "Irregular wall") in
+  Object_store.(push id { zmin; zmax; path; anchors; structure; walls; width; height; name }
+                     Storage.store);
   begin match !Storage.rtree with
   | None -> Storage.rtree := Some (Rtree.singleton id)
   | Some r -> Storage.rtree := Some (Rtree.add id r Storage.store)

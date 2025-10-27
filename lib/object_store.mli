@@ -2,7 +2,8 @@
 
 (** The type of stored objects *)
 type obj = { zmin: float; zmax: float; path: string; anchors: Anchor.set; height: float;
-             width: float; shape: Geo.obj; name: string } [@@marshal]
+             width: float; structure: Geo.obj; walls: Linalg.Segment2.t list;
+             name: string } [@@marshal]
 
 (** The type of object stores *)
 type t = (string, obj) Hashtbl.t [@@marshal]

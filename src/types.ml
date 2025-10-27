@@ -16,6 +16,7 @@ type floorplan = { height: float [@json];
 type payload = { anchors: Zwmlib.Anchor.set [@json];
                  floorplan: floorplan [@json];
                  name: string [@json];
-                 shapes: point list list [@json];
+                 structure: point list list [@json];
+                 walls: point list list [@json];
                  zmin: float [@json];
                  zmax: float [@json] } [@@marshal]
