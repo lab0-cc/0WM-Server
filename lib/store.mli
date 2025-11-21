@@ -3,16 +3,23 @@
 module Backend : module type of Irmin_git_unix.FS.KV (Irmin.Contents.Json_value)
 
 (** The type of stored objects *)
-type obj = { zmin: float; zmax: float; path: string; anchors: Anchor.set; height: float;
-             width: float; structure: Geo.obj; walls: Linalg.Segment2.t list;
-             name: string } [@@marshal]
+type obj = {
+  zmin : float;
+  zmax : float;
+  path : string;
+  anchors : Anchor.set;
+  height : float;
+  width : float;
+  structure : Geo.obj;
+  walls : Linalg.Segment2.t list;
+  name : string;
+} [@@marshal]
 
-type s_data = { position: Linalg.point3;
-                measurements: Dot11.measurement list } [@@marshal]
+type s_data = { position : Linalg.point3; measurements : Dot11.measurement list } [@@marshal]
 
-type s_meta = { map: string; transform: Linalg.Matrix3.t } [@@marshal]
+type s_meta = { map : string; transform : Linalg.Matrix3.t } [@@marshal]
 
-type scan = { meta: s_meta option; data: (int * s_data) list } [@@marshal]
+type scan = { meta : s_meta option; data : (int * s_data) list } [@@marshal]
 
 (** The type of stores *)
 type t = Backend.repo option ref

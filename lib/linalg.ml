@@ -1,10 +1,11 @@
 [%%marshal.load Json]
 
 (** The type of 2D points *)
-type point = { p_x: float [@json "x"]; p_y: float [@json "y"] } [@@marshal]
+type point = { p_x : float [@json "x"]; p_y : float [@json "y"] } [@@marshal]
 
 (** The type of 3D points *)
-type point3 = { p3_x: float [@json "x"]; p3_y: float [@json "y"]; p3_z: float [@json "z"] } [@@marshal]
+type point3 = { p3_x : float [@json "x"]; p3_y : float [@json "y"]; p3_z : float [@json "z"] }
+              [@@marshal]
 
 module Vector2 = struct
   (** Get the vector from the first point to the second *)
@@ -48,7 +49,7 @@ end
 
 module Segment2 = struct
   (** The type of 2D segments *)
-  type t = { s_start: point [@json "start"]; s_end: point [@json "end"] } [@@marshal]
+  type t = { s_start : point [@json "start"]; s_end : point [@json "end"] } [@@marshal]
 
   (** Get the segment from the first point to the second *)
   let of_points s_start s_end = { s_start; s_end }
@@ -67,12 +68,12 @@ module Segment2 = struct
     if abs_float den < Util.eps
     then Parallel
     else
-        let v'' = Vector2.(of_points s.s_start s'.s_start |> scaled (1. /. den)) in
-        let factor = Vector2.cross v'' v' in
-        let factor' = Vector2.cross v'' v in
-        if factor < 0. || factor > 1. || factor' < 0. || factor' > 1.
-        then Outside
-        else Inside Vector2.(scaled factor v |> plus s.s_start)
+      let v'' = Vector2.(of_points s.s_start s'.s_start |> scaled (1. /. den)) in
+      let factor = Vector2.cross v'' v' in
+      let factor' = Vector2.cross v'' v in
+      if factor < 0. || factor > 1. || factor' < 0. || factor' > 1.
+      then Outside
+      else Inside Vector2.(scaled factor v |> plus s.s_start)
 
   (** Check if two segments cross *)
   let crosses s s' = match intersect s s' with
@@ -89,7 +90,7 @@ module Segment2 = struct
   (** Get the closest point on a segment *)
   let closest p ({ s_start; _ } as s) =
     let v = vec s in
-    let t = Math.clamp ~min:0. ~max:1. (Vector2.((of_points s_start p |> dot v) /. sqnorm v)) in
+    let t = Math.clamp ~min:0. ~max:1. Vector2.((of_points s_start p |> dot v) /. sqnorm v) in
     Vector2.(scaled t v |> plus s_start)
 
   (** Get the square distance between a point and a segment *)
@@ -98,7 +99,7 @@ end
 
 module Box2 = struct
   (** The type of 2D boxes *)
-  type t = { b_min: point [@json "min"]; b_max: point [@json "max"] } [@@marshal]
+  type t = { b_min : point [@json "min"]; b_max : point [@json "max"] } [@@marshal]
 
   (** Get the bounding box from a list of points *)
   let of_points = function
@@ -195,20 +196,17 @@ module Matrix = struct
   let of_vectors = Array.of_list
 
   (** Transpose a matrix *)
-  let transpose m =
-    match Array.length m with
+  let transpose m = match Array.length m with
     | 0 -> [||]
     | x ->
         let y = Array.length m.(0) in
         Array.init y (fun i -> Array.init x (fun j -> m.(j).(i)))
 
   (** Apply the transpose of the given matrix to the given vector *)
-  let applyT_v v =
-    Array.map (Vector.dot v)
+  let applyT_v v = Array.map (Vector.dot v)
 
   (** Apply a matrix to a vector *)
-  let apply_v v m =
-    transpose m |> applyT_v v
+  let apply_v v m = transpose m |> applyT_v v
 end
 
 (** Conjugate gradient solve for SPD matrix *)

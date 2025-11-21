@@ -1,8 +1,15 @@
 open Linalg
 open Types
 
-type config = { resolution: float; padding: float; scale: float; steps: int; vmin: float;
-                vmax: float; minimal: bool }
+type config = {
+  resolution : float;
+  padding : float;
+  scale : float;
+  steps : int;
+  vmin : float;
+  vmax : float;
+  minimal : bool;
+}
 
 (** Chain isosegments into isopolygons *)
 let chain_segments ~walls resolution segs =
@@ -29,8 +36,7 @@ let chain_segments ~walls resolution segs =
   let rec polys acc = function
     | [] -> acc
     | Segment2.{ s_start; s_end }::tl ->
-        let rec poly first last points rem =
-          match next first rem with
+        let rec poly first last points rem = match next first rem with
           | Some (p, rem2) -> poly p last (first::points) rem2
           | None ->
               (match next last rem with

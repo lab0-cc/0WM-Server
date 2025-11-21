@@ -8,20 +8,27 @@ module Info = Irmin_git_unix.Info (Backend.Info)
 let src = Logs.Src.create "zwm.store" ~doc:"0WM storage backend"
 module Log = (val Logs.src_log src : Logs.LOG)
 
-type obj = { zmin: float [@json]; zmax: float [@json]; path: string [@json];
-             anchors: Anchor.set [@json]; height: float [@json]; width: float [@json];
-             structure: Geo.obj [@json] [@default Geo.Polygon []];
-             walls: Linalg.Segment2.t list [@json]; name: string [@json] } [@@marshal]
+type obj = {
+  zmin : float [@json];
+  zmax : float [@json];
+  path : string [@json];
+  anchors : Anchor.set [@json];
+  height : float [@json];
+  width : float [@json];
+  structure : Geo.obj [@json] [@default Geo.Polygon []];
+  walls : Linalg.Segment2.t list [@json];
+  name : string [@json];
+} [@@marshal]
 
-type s_data = { position: Linalg.point3 [@json];
-                measurements: Dot11.measurement list [@json] } [@@marshal]
+type s_data = { position : Linalg.point3 [@json]; measurements : Dot11.measurement list [@json] }
+              [@@marshal]
 
-type s_meta = { map: string [@json]; transform: Linalg.Matrix3.t [@json] } [@@marshal]
+type s_meta = { map : string [@json]; transform : Linalg.Matrix3.t [@json] } [@@marshal]
 
 type s_data_l = (int * s_data) list
 let s_data_l = Gendarme.(map int s_data) (** Dirty trick until Gendarme supports more customization *)
 
-type scan = { meta: s_meta option [@json]; data: s_data_l [@json] } [@@marshal]
+type scan = { meta : s_meta option [@json]; data : s_data_l [@json] } [@@marshal]
 
 type t = Backend.repo option ref
 
@@ -93,12 +100,12 @@ let cleanup_scan ?(recovery=false) id store =
         let prefix = if recovery then "[recovery] " else "" in
         let info = Info.v "%sMerge session %s" prefix id in
         match%lwt Backend.merge_into ~into:main ~info branch with
-          | Ok () ->
-              Log.info (fun m -> m "Successfully merged session %s" id);
-              Lwt.return_unit
-          | Error (`Conflict s) ->
-              Log.err (fun m -> m "Error merging session %s: %s" id s);
-              Lwt.return_unit
+        | Ok () ->
+            Log.info (fun m -> m "Successfully merged session %s" id);
+            Lwt.return_unit
+        | Error (`Conflict s) ->
+            Log.err (fun m -> m "Error merging session %s: %s" id s);
+            Lwt.return_unit
 
 let end_scan id =
   Log.debug (fun m -> m "Ending session %s" id);

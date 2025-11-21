@@ -2,24 +2,53 @@
 
 open Dot11
 
-type mode = Unknown | Master | Ad_hoc | Client | Monitor | Master_VLAN | WDS | Mesh_point
-          | P2P_client | P2P_go [@@marshal]
+type mode =
+  | Unknown
+  | Master
+  | Ad_hoc
+  | Client
+  | Monitor
+  | Master_VLAN
+  | WDS
+  | Mesh_point
+  | P2P_client
+  | P2P_go
+[@@marshal]
 
-type ht_oper = { primary_channel: int [@json]; secondary_channel_offset: string [@json];
-                 channel_width: int [@json] } [@@marshal]
+type ht_oper = {
+  primary_channel : int [@json];
+  secondary_channel_offset : string [@json];
+  channel_width : int [@json];
+} [@@marshal]
 
-type vht_oper = { channel_width: int [@json]; center_freq_1: int [@json];
-                  center_freq_2: int [@json] } [@@marshal]
+type vht_oper = {
+  channel_width : int [@json];
+  center_freq_1 : int [@json];
+  center_freq_2 : int [@json];
+} [@@marshal]
 
-type encryption = { enabled: bool [@json]; wep: string list option [@json];
-                    wpa: int list option [@json]; authentication: string list [@json];
-                    ciphers: string list [@json] } [@@marshal]
+type encryption = {
+  enabled : bool [@json];
+  wep : string list option [@json];
+  wpa : int list option [@json];
+  authentication : string list [@json];
+  ciphers : string list [@json];
+} [@@marshal]
 
-type t = { ssid: string option [@json]; bssid: string [@json];
-           mode: mode [@json] [@default Unknown]; band: int [@json]; channel: int [@json];
-           mhz: int [@json]; signal: int [@json]; quality: int [@json]; quality_max: int [@json];
-           ht_operation: ht_oper option [@json]; vht_operation: vht_oper option [@json];
-           encryption: encryption [@json] } [@@marshal]
+type t = {
+  ssid : string option [@json];
+  bssid : string [@json];
+  mode : mode [@json]; [@default Unknown]
+  band : int [@json];
+  channel : int [@json];
+  mhz : int [@json];
+  signal : int [@json];
+  quality : int [@json];
+  quality_max : int [@json];
+  ht_operation : ht_oper option [@json];
+  vht_operation : vht_oper option [@json];
+  encryption : encryption [@json];
+} [@@marshal]
 
 let ht_op { primary_channel; secondary_channel_offset; channel_width } =
   let ht_width = match channel_width with
@@ -44,8 +73,8 @@ let ops { band; ht_operation; vht_operation; _ } =
   let ht = Option.map ht_op ht_operation in
   let vht = Option.map vht_op vht_operation in
   match band with
-    | 2 -> Ops_2_4 { f_2_4_ht = ht; f_2_4_eht = None }
-    | _ -> Ops_5 { f_5_ht = ht; f_5_vht = vht; f_5_eht = None }
+  | 2 -> Ops_2_4 { f_2_4_ht = ht; f_2_4_eht = None }
+  | _ -> Ops_5 { f_5_ht = ht; f_5_vht = vht; f_5_eht = None }
 
 let channel { band; channel; _ } = match band with
   | 2 -> Chan_2_4 channel
@@ -87,7 +116,7 @@ let encr ({ enabled; authentication; ciphers; _ } as encr) = match enabled with
       let ciphers = List.map cipher ciphers in
       Some { protocols; auth; ciphers }
 
-let ap ({ ssid; bssid; encryption; _ } as info) = 
+let ap ({ ssid; bssid; encryption; _ } as info) =
   let channel = channel info in
   let ops = ops info in
   let encryption = encr encryption in

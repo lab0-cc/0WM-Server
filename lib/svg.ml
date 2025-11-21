@@ -16,9 +16,9 @@ let opt_s s = function
   | None -> ""
 
 let rect ?(fill="none") ?opacity ?(stroke="none") ?sw p v =
-  Printf.sprintf {|<rect x="%.3f" y="%.3f" width="%.3f" height="%.3f" fill="%s" stroke="%s" shape-rendering="optimizeSpeed"%s%s/>|}
-                 p.p_x p.p_y v.p_x v.p_y fill stroke (opt_f "fill-opacity" opacity)
-                 (opt_f "stroke-width" sw)
+  Printf.sprintf
+    {|<rect x="%.3f" y="%.3f" width="%.3f" height="%.3f" fill="%s" stroke="%s" shape-rendering="optimizeSpeed"%s%s/>|}
+    p.p_x p.p_y v.p_x v.p_y fill stroke (opt_f "fill-opacity" opacity) (opt_f "stroke-width" sw)
 
 let line ?(stroke="none") ?sw Segment2.{ s_start; s_end } =
   opt_f "stroke-width" sw

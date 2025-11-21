@@ -1,4 +1,4 @@
-type t = { r: int; g: int; b: int; a: int }
+type t = { r : int; g : int; b : int; a : int }
 
 let black = { r = 0; g = 0; b = 0; a = 255 }
 

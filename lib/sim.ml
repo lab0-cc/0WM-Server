@@ -1,11 +1,18 @@
 open Linalg
 open Types
 
-type config = { exponent: float; precision: float; norm: float; blend_sharpness: float }
+type config = { exponent : float; precision : float; norm : float; blend_sharpness : float }
 
-type model = { calibration: Linalg.Vector.t; pts: Linalg.point array; cfg: config;
-               walls: Types.wall list; aps: Types.ap list; kernel: Linalg.Matrix.t; ell: float;
-               freq: float }
+type model = {
+  calibration : Linalg.Vector.t;
+  pts : Linalg.point array;
+  cfg : config;
+  walls : Types.wall list;
+  aps : Types.ap list;
+  kernel : Linalg.Matrix.t;
+  ell : float;
+  freq : float;
+}
 
 (** Direct radio distance between two points *)
 let radio_dist ~ell ~walls p p' =

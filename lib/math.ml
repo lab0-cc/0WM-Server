@@ -10,4 +10,4 @@ let median = function
 
 let matern32 d =
   let a = sqrt 3. *. d in
-  (1. +. a) *. exp (~-. a)
+  (1. +. a) *. exp ~-.a

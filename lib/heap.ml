@@ -19,8 +19,8 @@ module Min (T : O) = struct
 end
 
 module Make (T : S) = struct
-  type 'a item = { value: T.index; content: 'a }
-  type 'a t = Empty | Heap of { item: 'a item; left: 'a t; right: 'a t; size: int }
+  type 'a item = { value : T.index; content : 'a }
+  type 'a t = Empty | Heap of { item : 'a item; left : 'a t; right : 'a t; size : int }
 
   let rec add value content = function
     | Empty -> Heap { item = { value; content }; left = Empty; right = Empty; size = 1 }

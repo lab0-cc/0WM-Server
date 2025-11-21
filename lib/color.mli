@@ -1,7 +1,7 @@
 (** This module implements primitives on colors *)
 
 (** The type of RGB colors *)
-type t = { r: int; g: int; b: int; a: int }
+type t = { r : int; g : int; b : int; a : int }
 
 (** Black color *)
 val black : t

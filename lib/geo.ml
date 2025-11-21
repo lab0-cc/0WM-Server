@@ -1,10 +1,10 @@
 open Linalg
 [%%marshal.load Json]
 
-type point = { lat: float [@json]; long: float [@json] } [@@marshal]
-type box = { sw: point [@json]; ne: point [@json] } [@@marshal]
-type obj = Bounding_box of box | Polygon of point list
-         | Multi_polygon of point list list [@@marshal]
+type point = { lat : float [@json]; long : float [@json] } [@@marshal]
+type box = { sw : point [@json]; ne : point [@json] } [@@marshal]
+type obj = Bounding_box of box | Polygon of point list | Multi_polygon of point list list
+[@@marshal]
 
 let ll_of_xy { p_x; p_y } = { long = p_x; lat = p_y }
 
@@ -14,8 +14,10 @@ let average_earth_radius = 6_371_008.771
 
 let distance { lat; long } { lat = lat'; long = long' } =
   let rad x = x *. Float.pi /. 180. in
-  2. *. average_earth_radius *. asin
-    (sqrt ((1. -. cos(lat'-.lat |> rad) +. cos(rad lat) *. cos(rad lat') *. (1. -. cos (long'-.long |> rad))) /. 2.))
+  2. *. average_earth_radius
+     *. asin (sqrt ((1. -. cos(lat'-.lat |> rad)
+                        +. cos(rad lat) *. cos(rad lat') *. (1. -. cos (long'-.long |> rad)))
+                    /. 2.))
 
 let is_degenerate { sw; ne } = sw.long > ne.long
 
@@ -42,7 +44,7 @@ let rec bounding_box = function
       let bb = Polygon hd |> bounding_box in
       List.fold_left (fun acc p -> Polygon p |> bounding_box |> merge_pure_bounding_boxes acc) bb tl
 
-and merge_pure_bounding_boxes bb bb' = match bb, bb' with
+and merge_pure_bounding_boxes bb bb' = match (bb, bb') with
   | ({ sw; ne } as bb), ({ sw = sw'; ne = ne' } as bb') when is_degenerate bb = is_degenerate bb' ->
       { sw = { lat = min sw.lat sw'.lat; long = min sw.long sw'.long };
         ne = { lat = max ne.lat ne'.lat; long = max ne.long ne'.long } }
@@ -52,8 +54,7 @@ and merge_pure_bounding_boxes bb bb' = match bb, bb' with
       { sw; ne = { lat = max ne.lat ne'.lat; long = max ne.long ne'.long } }
   | bb, bb' -> merge_pure_bounding_boxes bb' bb
 
-let merge_bounding_boxes obj obj' =
-  merge_pure_bounding_boxes (bounding_box obj) (bounding_box obj')
+let merge_bounding_boxes obj obj' = merge_pure_bounding_boxes (bounding_box obj) (bounding_box obj')
 
 let normalize l =
   if Polygon l |> bounding_box |> is_degenerate
@@ -65,10 +66,10 @@ let obj_distance p = function
       (* For convenience, we don’t deal with bounding boxes containing poles. And that’s fine! *)
       let lat = max p.lat sw.lat |> min ne.lat in
       (* We handle however the case where we cross the antimeridian *)
-      let long = if is_degenerate bb
-                 then if p.long > 0. then max p.long sw.long
-                      else min p.long ne.long
-                 else max p.long sw.long |> min ne.long in
+      let long =
+        if is_degenerate bb
+        then if p.long > 0. then max p.long sw.long else min p.long ne.long
+        else max p.long sw.long |> min ne.long in
       distance p { lat; long }
   | Polygon l ->
       let l = normalize l in

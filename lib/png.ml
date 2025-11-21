@@ -75,7 +75,7 @@ let zlib s =
   adler32 s |> add_u32_be_int b;
   Buffer.contents b
 
-let encode (img:Color.t array array) =
+let encode img =
   let h = Array.length img in
   if h = 0 then invalid_arg "encode";
   let w = Array.length img.(0) in
@@ -87,7 +87,7 @@ let encode (img:Color.t array array) =
       Buffer.add_char b '\x00';
       for x = 0 to w - 1 do
         let p = img.(y).(x) in
-        Buffer.add_char b (char_of_int (Math.clamp ~min:0 ~max:255 p.r));
+        Buffer.add_char b (char_of_int (Math.clamp ~min:0 ~max:255 p.Color.r));
         Buffer.add_char b (char_of_int (Math.clamp ~min:0 ~max:255 p.g));
         Buffer.add_char b (char_of_int (Math.clamp ~min:0 ~max:255 p.b));
         Buffer.add_char b (char_of_int (Math.clamp ~min:0 ~max:255 p.a));

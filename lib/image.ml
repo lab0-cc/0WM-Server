@@ -29,7 +29,7 @@ let save id image =
       | Index8 img -> img#to_rgb24
       | Index16 img -> img#to_rgb24
       | Cmyk32 _ -> raise Unrecognized_format in
-    let w, h = img#width, img#height in
+    let (w, h) = (img#width, img#height) in
     let scale = min (256. /. float w) (256. /. float h) in
     let new_w = int_of_float (float w *. scale) in
     let new_h = int_of_float (float h *. scale) in

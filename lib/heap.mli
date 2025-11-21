@@ -27,10 +27,10 @@ module Min (T : O) : S with type index = T.t
 (** Functor building heap implementations *)
 module Make (T : S) : sig
   (** The type of heap items *)
-  type 'a item = { value: T.index; content: 'a }
+  type 'a item = { value : T.index; content : 'a }
 
   (** The type of heaps *)
-  type 'a t = Empty | Heap of { item: 'a item; left: 'a t; right: 'a t; size: int }
+  type 'a t = Empty | Heap of { item : 'a item; left : 'a t; right : 'a t; size : int }
 
   (** Add a value to a heap *)
   val add : T.index -> 'a -> 'a t -> 'a t

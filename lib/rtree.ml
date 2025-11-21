@@ -48,7 +48,7 @@ let lazy_l x = lazy (Lwt.return x)
 
 let add id tree store =
   let* shape = Leaf id |> geo_of store in
-  let rec add_rec id (bb:Geo.box) = function
+  let rec add_rec id bb = function
     | Leaf id' ->
         (* If this is a leaf, create a branch node *)
         Node (bb, [Leaf id; Leaf id']) |> Lwt.return
@@ -104,9 +104,10 @@ let add id tree store =
                          then insert_farthest (hd, bb', area'', true) tl
                          else insert_farthest (hd, bb'', area', false) tl
                 | [] ->
-                    let acc = if left
-                              then (bb, node::node', bb'', node'')
-                              else (bb', node', bb, node::node'') in
+                    let acc =
+                      if left
+                      then (bb, node::node', bb'', node'')
+                      else (bb', node', bb, node::node'') in
                     insert_others acc (List.filter (fun n -> n != node) l) in
               insert_farthest (tree, bb, 0., false) l in
         (* And we insert the remaining nodes into these two subtrees *)
