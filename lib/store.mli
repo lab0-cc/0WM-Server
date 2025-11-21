@@ -15,10 +15,13 @@ type obj = {
   name : string;
 } [@@marshal]
 
+(** The type of individual scans in scan sessions *)
 type s_data = { position : Linalg.point3; measurements : Dot11.measurement list } [@@marshal]
 
+(** The type of scan session metadata *)
 type s_meta = { map : string; transform : Linalg.Matrix3.t } [@@marshal]
 
+(** The type of scan sessions *)
 type scan = { meta : s_meta option; data : (int * s_data) list } [@@marshal]
 
 (** The type of stores *)
