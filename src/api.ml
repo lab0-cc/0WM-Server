@@ -1,3 +1,5 @@
+open Lwt.Syntax
+open Lwt.Infix
 open Types
 open Zwmlib
 open Linalg
@@ -8,14 +10,14 @@ let html = Dream.html ~headers:[("Access-Control-Allow-Origin", "*")]
 let svg s = Dream.response ~headers:[("Content-Type", "image/svg+xml");
                                      ("Access-Control-Allow-Origin", "*")] s |> Lwt.return
 
-let get_map_s id = Object_store.find id Storage.store
+let get_map_s id = Store.find_object id Runtime.store
 
-let get_map id = [%encode.Json] ~v:(get_map_s id) Object_store.obj |> json
+let get_map id = Store.find_object_j id Runtime.store >>= json
 
 let get_heatmap_s ~ssids id =
   let t = Hashtbl.create 10 in
-  let (meta, scans) = Scan_store.find id Storage.measurements in
-  List.iter (fun Scan_store.{ position = { p3_x; p3_z; _ }; measurements; _ } ->
+  let* { meta; data } = Store.find_scan id Runtime.store in
+  List.iter (fun (_, Store.{ position = { p3_x; p3_z; _ }; measurements; _ }) ->
     List.iter (fun Dot11.{ ap; signal } -> match ap.ssid with
       | Some ssid when List.mem ssid ssids ->
           let f = Dot11.center_freq ap in
@@ -23,45 +25,46 @@ let get_heatmap_s ~ssids id =
           Hashtbl.replace t (Dot11.center_freq ap)
                           ({ s_p = { p_x = p3_x; p_y = p3_z }; s_dbm = float signal }::l)
       | _ -> ()
-    ) measurements) scans;
+    ) measurements) data;
   let spectrum = Hashtbl.fold
                    (fun f s_samples acc -> { s_freq = float f; s_samples; s_aps = [] }::acc) t [] in
-  let walls = match meta with
+  let* walls = match meta with
     | Some meta ->
-        let Object_store.{ structure; walls; _ } = get_map_s meta.map in
+        let* Store.{ structure; walls; _ } = get_map_s meta.map in
         Geo.segments structure @ walls
         |> List.map (fun s -> { w_seg = Matrix3.apply_s2 s meta.transform; w_tran = 0.6;
                                 w_refl = 0.3 })
-    | None -> [] in
+        |> Lwt.return
+    | None -> Lwt.return [] in
   let env = { walls; spectrum } in
   let render_cfg = Render.{ resolution = 0.2; padding = 5.; scale = 40.0; steps = 0; vmin = -90.;
                             vmax = -30.; minimal = true } in
   let sim_cfg = Sim.{ exponent = 2.0; precision = 0.25; norm = 10.; blend_sharpness = 2. } in
   let f = Sim.build_predictor ~cfg:sim_cfg env in
-  Render.render ~cfg:render_cfg ~f env
+  Render.render ~cfg:render_cfg ~f env |> Lwt.return
 
-let get_heatmap ~ssids id = let (img, _) = get_heatmap_s ~ssids id in svg img
+let get_heatmap ~ssids id = let* (img, _) = get_heatmap_s ~ssids id in svg img
 
 let format_map_sl recurse v =
-  let res =
+  let* res =
     if recurse
     then
-      let v = List.map (fun id -> (id, get_map_s id)) v
-              |> List.sort (fun (_, Object_store.{ name; _ }) (_, { name = name'; _ }) ->
-                   compare name name') in
-      [%encode.Json] ~v Gendarme.(map string Object_store.obj)
-    else [%encode.Json] ~v Gendarme.(list string) in
+      let* v = Lwt_list.map_p (fun id -> let* map = get_map_s id in Lwt.return (id, map)) v
+               >|= List.sort (fun (_, Store.{ name; _ }) (_, { name = name'; _ }) ->
+                     compare name name') in
+      [%encode.Json] ~v Gendarme.(map string Store.obj) |> Lwt.return
+    else [%encode.Json] ~v Gendarme.(list string) |> Lwt.return in
   json res
 
 let get_maps ?latitude ?longitude ?altitude ?(accuracy=0.) ?(altitude_accuracy=0.) ?(limit=1000)
-             recurse () = match !Storage.rtree, latitude, longitude with
+             recurse () = match !Runtime.rtree, latitude, longitude with
   | None, _, _ when recurse -> [%encode.Json] ~v:[] Gendarme.(map string string) |> json
   | None, _, _ -> [%encode.Json] Gendarme.empty_list |> json
   | Some rtree, None, _ | Some rtree, _, None -> Rtree.to_list rtree |> format_map_sl recurse
   | Some rtree, Some lat, Some long ->
-      let maps = Rtree.sort ~limit (Geo.{ lat; long }) rtree Storage.store
-        |> List.map (fun (distance, id) ->
-          let obj = get_map_s id in
+      let* maps = Rtree.sort ~limit (Geo.{ lat; long }) rtree Runtime.store
+        >>= Lwt_list.map_p (fun (distance, id) ->
+          let* obj = get_map_s id in
           let confidence =
             if distance <= accuracy
             then match altitude with
@@ -69,8 +72,8 @@ let get_maps ?latitude ?longitude ?altitude ?(accuracy=0.) ?(altitude_accuracy=0
                               && alt -. altitude_accuracy < obj.zmax -> Confidence.Valid3D
               | _ -> Valid2D
             else Invalid in
-          (id, obj, distance, confidence))
-        |> List.sort
+          Lwt.return (id, obj, distance, confidence))
+        >|= List.sort
              (fun (_, _, distance, confidence) (_, _, distance', confidence') ->
                match Confidence.compare confidence confidence' with
                | 0 -> compare distance distance'
@@ -92,6 +95,12 @@ let process_shapes m =
         process_shapes_rec (List.map (fun p -> Matrix3.apply_p2 p m |> Geo.ll_of_xy) shape::acc) tl
     | [] -> acc in
   process_shapes_rec []
+
+let update_rtree id = match !Runtime.rtree with
+  | None -> Lwt.return (Runtime.rtree := Some (Rtree.singleton id))
+  | Some r ->
+      let* rtree = Rtree.add id r Runtime.store in
+      Lwt.return (Runtime.rtree := Some rtree)
 
 let push_map { anchors = (a, a', a'' as anchors); structure; walls;
                floorplan = { data; width; height }; zmin; zmax; name } =
@@ -121,10 +130,7 @@ let push_map { anchors = (a, a', a'' as anchors); structure; walls;
   let walls = process_shapes m walls |> List.map (function
     | hd::hd'::[] -> Segment2.of_points (Geo.xy_of_ll hd) (Geo.xy_of_ll hd')
     | _ -> failwith "Irregular wall") in
-  Object_store.(push id { zmin; zmax; path; anchors; structure; walls; width; height; name }
-                     Storage.store);
-  begin match !Storage.rtree with
-  | None -> Storage.rtree := Some (Rtree.singleton id)
-  | Some r -> Storage.rtree := Some (Rtree.add id r Storage.store)
-  end;
+  let* () = Store.(push_object id { zmin; zmax; path; anchors; structure; walls; width; height; name }
+                                  Runtime.store) in
+  let* () = update_rtree id in
   html "ok"

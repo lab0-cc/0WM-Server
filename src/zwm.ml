@@ -1,6 +1,11 @@
 (** This module implements the entrypoint for the 0WM server *)
 
 open Types
+open Lwt.Syntax
+open Lwt.Infix
+
+let src = Logs.Src.create "zwm.init" ~doc:"0WM initialization routine"
+module Log = (val Logs.src_log src : Logs.LOG)
 
 let (>>=) = Option.bind
 
@@ -16,8 +21,25 @@ let get_toggle request parameter = match Dream.query request parameter with
       | "false" | "no" | "disable" | "0" -> false
       | _ -> true
 
-let () =
-  Dream.run ~interface:Config.config.interface ~port:Config.config.port
+let debug_store ?branch ~store path =
+  let* branch = match branch with
+    | None | Some "main" -> Runtime.Store.main store
+    | Some b -> Runtime.Store.of_branch store b in
+  let* data = Runtime.Proj.get branch path in
+  Ezjsonm.value_to_string data |> Dream.json
+
+let cleanup_open_sessions store =
+  Log.info (fun m -> m "Cleaning up open sessions");
+  Lwt_list.iter_s (fun b -> Zwmlib.Store.cleanup_scan (String.sub b 6 36) store)
+
+let rebuild_rtree store =
+  Log.info (fun m -> m "Rebuilding R-tree");
+  let* main = Runtime.Store.main store in
+  let* objects = Runtime.Store.list main ["objects"] in
+  Lwt_list.iter_s (fun (o, _) -> Api.update_rtree o) objects
+
+let init_web store =
+  Dream.serve ~interface:Config.config.interface ~port:Config.config.port
   @@ Dream.logger
   @@ Dream.router [
     Dream.get "/data/**" (Dream.static "data");
@@ -42,7 +64,21 @@ let () =
     );
     Dream.options "/maps" (fun _ -> Dream.respond ~headers:[("Access-Control-Allow-Origin", "*"); ("Access-Control-Allow-Headers", "*")] ~status:`No_Content "");
     Dream.get "/ws" (fun _ -> Dream.websocket Ws.live);
-    Dream.get "/debug/rtree" (fun _ -> [%encode.Json] ~v:!Storage.rtree (Gendarme.option Zwmlib.Rtree.t) |> Dream.json);
-    Dream.get "/debug/store" (fun _ -> [%encode.Json] ~v:Storage.store (Zwmlib.Object_store.t) |> Dream.json);
-    Dream.get "/debug/measurements" (fun _ -> [%encode.Json] ~v:Storage.measurements (Zwmlib.Scan_store.t) |> Dream.json)
+    Dream.get "/debug/rtree" (fun _ -> [%encode.Json] ~v:!Runtime.rtree (Gendarme.option Zwmlib.Rtree.t) |> Dream.json);
+    Dream.get "/debug/store" (fun request -> debug_store ?branch:(Dream.query request "branch") ~store []);
+    Dream.get "/debug/store/**" (fun request ->
+      (Dream.path [@alert "-deprecated"]) request |> List.filter ((<>) "")
+      |> debug_store ?branch:(Dream.query request "branch") ~store);
   ]
+
+let init =
+  Dream.initialize_log ();
+  let* store = Runtime.(Store.Repo.v config) in
+  Runtime.store := Some store;
+  let* branches = Runtime.Store.Branch.list store >|= List.filter (String.starts_with ~prefix:"scans/") in
+  let* () = cleanup_open_sessions Runtime.store branches in
+  let* () = rebuild_rtree store in
+  Log.info (fun m -> m "Initialization completed");
+  init_web store
+
+let () = Lwt_main.run init

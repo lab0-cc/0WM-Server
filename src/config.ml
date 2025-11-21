@@ -1,8 +1,8 @@
 (** This module implements a rough configuration loader *)
 
-[%%marshal.load Yojson]
+[%%marshal.load Json]
 
 type t = { interface: string [@json]; port: int [@json]; aps: string list [@json];
            ssids: string list [@json] } [@@marshal]
 
-let config = [%unmarshal.Json] ~v:(Yojson.Safe.from_file "config.json") t
+let config = [%unmarshal.Json] ~v:(Ezjsonm.from_channel (open_in "config.json")) t

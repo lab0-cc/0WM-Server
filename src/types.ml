@@ -7,7 +7,7 @@ type map = { m_dst: float [@json "distance"];
 
 type map_rec = { mr_dst: float [@json "distance"];
                  mr_cfd: Zwmlib.Confidence.t [@json "confidence"] [@default Invalid];
-                 mr_map: Zwmlib.Object_store.obj [@json "map"] } [@@marshal]
+                 mr_map: Zwmlib.Store.obj [@json "map"] } [@@marshal]
 
 type floorplan = { height: float [@json];
                    width: float [@json];

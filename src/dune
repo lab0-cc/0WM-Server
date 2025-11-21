@@ -1,4 +1,4 @@
 (executable
   (name zwm)
-  (libraries dream gendarme-yojson uuidm zwmlib)
+  (libraries dream gendarme-ezjsonm irmin-git.unix uuidm zwmlib)
   (preprocess (pps lwt_ppx ppx_marshal)))
