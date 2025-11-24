@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>0WM server API reference</title>
+  <link rel="stylesheet" type="text/css" href="/swagger/swagger-ui.css">
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="/swagger/swagger-ui-bundle.js"></script>
+<script src="/swagger/swagger-ui-standalone-preset.js"></script>
+<script>
+window.onload = function() {
+  const ui = SwaggerUIBundle({
+    url: "/api.yml",
+    dom_id: '#swagger-ui',
+    presets: [
+      SwaggerUIBundle.presets.apis,
+      SwaggerUIStandalonePreset
+    ]
+  })
+  window.ui = ui
+}
+</script>
+</body>
+</html>

@@ -86,6 +86,9 @@ let init_web store =
     Dream.get "/debug/store/**" (fun request ->
       (Dream.path [@alert "-deprecated"]) request |> List.filter ((<>) "")
       |> debug_store ?branch:(Dream.query request "branch") ~store);
+    Dream.get "/swagger/**" (Dream.static "swagger");
+    Dream.get "/" (Dream.from_filesystem "" "api.html");
+    Dream.get "/api.yml" (Dream.from_filesystem "" "api.yml");
     Dream.get "/ws" (fun _ -> Dream.websocket Ws.live);
   ]
 

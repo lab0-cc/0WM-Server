@@ -1,0 +1,406 @@
+openapi: 3.0.4
+info:
+  title: 0WM API reference
+  description: |-
+    This is 0WM’s server REST API. The OpenAPI definition file for this API can be found [here](/openapi.yaml).
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit
+  version: 1.0.12
+externalDocs:
+  description: 0WM website
+  url: https://0wm.lab0.cc
+tags:
+  - name: maps
+    description: Floorplan management
+  - name: data
+    description: Stored data
+  - name: heatmaps
+    description: Heatmap management
+  - name: debug
+    description: Debugging
+paths:
+  /maps:
+    get:
+      tags:
+        - maps
+      summary: Get the floorplans
+      description: Returns the floorplans in a format depending on the request.
+      parameters:
+        - name: latitude
+          in: query
+          description: Latitude around which to search. Requires `longitude` to be set.
+          schema:
+            $ref: '#/components/schemas/Latitude'
+        - name: longitude
+          in: query
+          description: Longitude around which to search. Requires `latitude` to be set.
+          schema:
+            $ref: '#/components/schemas/Longitude'
+        - name: altitude
+          in: query
+          description: Altitude around which to search. Requires `longitude` and `latitude` to be set.
+          schema:
+            type: number
+        - name: accuracy
+          in: query
+          description: Position accuracy in meters. Requires `longitude` and `latitude` to be set.
+          schema:
+            type: number
+            minimum: 0
+            default: 0
+        - name: altitude_accuracy
+          in: query
+          description: Altitude accuracy in meters. Requires `altitude` to be set.
+          schema:
+            type: number
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          description: Maximum number of floor plans to return.
+          schema:
+            type: number
+            minimum: 1
+            default: 1000
+        - name: recurse
+          in: query
+          description: Whether to fetch floorplan data.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - $ref: '#/components/schemas/MapDist'
+                  - $ref: '#/components/schemas/MapData'
+                  - $ref: '#/components/schemas/MapDataDist'
+                description: |-
+                  The response format depends on a combination of request parameters:
+                  * If `recurse` is `false`,
+                    * If there is not enough information for 2D positioning (*i.e.* `latitude` or `longitude` are not set), this returns a list of floorplan UUIDs.
+                    * If there is enough information for 2D positioning (*i.e.* `latitude` and `longitude` are both set), this returns a `MapDist` object.
+                  * If `recurse` is `true`,
+                    * If there is not enough information for 2D positioning (*i.e.* `latitude` or `longitude` are not set), this returns a `MapData` object.
+                    * If there is enough information for 2D positioning (*i.e.* `latitude` and `longitude` are both set), this returns a `MapDataDist` object.
+        '400':
+          description: Invalid arguments
+    post:
+      tags:
+        - maps
+      summary: Create a new floorplan
+      description: Creates a new floorplan.
+      requestBody:
+        description: Create a new floorplan entry.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MapDataEntryRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid arguments
+  /maps/{id}:
+    get:
+      tags:
+        - maps
+      summary: Find a floorplan by ID
+      description: Returns the floorplan with the given ID.
+      parameters:
+        - name: id
+          in: path
+          description: ID of the floorplan to return
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapDataEntry'
+        '404':
+          description: Floorplan not found
+  /data/{file}:
+    get:
+      tags:
+        - data
+      summary: Get stored data
+      description: Returns the stored file with the given name.
+      parameters:
+        - name: file
+          in: path
+          description: File name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found
+  /heatmaps/{id}:
+    get:
+      tags:
+        - heatmaps
+      summary: Get a heatmap by ID
+      description: Returns the heatmap with the given ID.
+      parameters:
+        - name: id
+          in: path
+          description: ID of the heatmap to return
+          required: true
+          schema:
+            type: string
+        - name: ssid
+          in: query
+          description: SSIDs to include. While this parameter is not required, not including it produces an empty heatmap.
+          schema:
+            type: array
+            items:
+              type: string
+            default: []
+          explode: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+        '404':
+          description: Heatmap not found
+  /debug/rtree:
+    get:
+      tags:
+        - debug
+      summary: Show the runtime R-tree
+      description: Returns a JSON representation of the internal R-tree.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+  /debug/store:
+    get:
+      tags:
+        - debug
+      summary: Show the runtime store
+      description: Returns a JSON representation of the internal store.
+      parameters:
+        - name: branch
+          in: query
+          description: The branch to show
+          schema:
+            type: string
+            default: main
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+  /debug/store/{path}:
+    get:
+      tags:
+        - debug
+      summary: Show the runtime store
+      description: Returns a JSON representation of the internal store.
+      parameters:
+        - name: path
+          in: path
+          description: Path of the store to show
+          schema:
+            type: string
+          required: true
+        - name: branch
+          in: query
+          description: The branch to show
+          schema:
+            type: string
+            default: main
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+components:
+  schemas:
+    MapDistEntry:
+      type: object
+      properties:
+        distance:
+          type: number
+          minimum: 0
+        confidence:
+          type: string
+          enum:
+            - Invalid
+            - Valid2D
+            - Valid3D
+      required:
+        - distance
+        - confidence
+    MapDist:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/MapDistEntry'
+    Latitude:
+      type: number
+      minimum: -90
+      maximum: 90
+    Longitude:
+      type: number
+      minimum: -180
+      maximum: 180
+    MapAnchor:
+      type: object
+      properties:
+        x:
+          type: number
+        y:
+          type: number
+        lng:
+          $ref: '#/components/schemas/Longitude'
+        lat:
+          $ref: '#/components/schemas/Latitude'
+      required:
+        - x
+        - y
+        - lng
+        - lat
+    Point:
+      type: object
+      properties:
+        x:
+          type: number
+        y:
+          type: number
+      required:
+        - x
+        - y
+    MapDataEntry:
+      type: object
+      properties:
+        zmin:
+          type: number
+        zmax:
+          type: number
+        path:
+          type: string
+        anchors:
+          type: array
+          items:
+            $ref: '#/components/schemas/MapAnchor'
+          minLength: 3
+          maxLength: 3
+        height:
+          type: number
+          minimum: 0
+        width:
+          type: number
+          minimum: 0
+        structure: {}
+        walls: {}
+        name:
+          type: string
+      required:
+        - zmin
+        - zmax
+        - path
+        - anchors
+        - height
+        - width
+        - structure
+        - walls
+        - name
+    MapData:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/MapDataEntry'
+    MapDataDist:
+      type: object
+      additionalProperties:
+        allOf:
+          - $ref: '#/components/schemas/MapDistEntry'
+          - type: object
+            properties:
+              map:
+                $ref: '#/components/schemas/MapDataEntry'
+            required:
+              - map
+    Floorplan:
+      type: object
+      properties:
+        height:
+          type: number
+          minimum: 0
+        width:
+          type: number
+          minimum: 0
+        data:
+          type: string
+      required:
+        - height
+        - width
+        - data
+    MapDataEntryRequest:
+      type: object
+      properties:
+        zmin:
+          type: number
+        zmax:
+          type: number
+        floorplan:
+          $ref: '#/components/schemas/Floorplan'
+        anchors:
+          type: array
+          items:
+            $ref: '#/components/schemas/MapAnchor'
+          minLength: 3
+          maxLength: 3
+        structure:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/Point'
+            minLength: 3
+        walls:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/Point'
+            minLength: 2
+            maxLength: 2
+        name:
+          type: string
+      required:
+        - zmin
+        - zmax
+        - floorplan
+        - anchors
+        - structure
+        - walls
+        - name
