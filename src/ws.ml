@@ -3,7 +3,7 @@ open Lwt.Syntax
 
 let (>>=) = Option.bind
 
-type context = { branch: Store.Backend.t option; uuid: string option }
+type context = { branch : Store.Backend.t option; uuid : string option }
 let empty_context = { branch = None; uuid = None }
 
 let uuid_opt =
@@ -19,7 +19,7 @@ let init ?id _ =
     | Some id -> Uuidm.to_string id
     | None -> uuid () in
   let* b = Store.begin_scan v Runtime.store in
-  Lwt.return ("UUID\000" ^ [%encode.Json] ~v Gendarme.string,  { branch = Some b; uuid = Some v })
+  Lwt.return ("UUID\000" ^ [%encode.Json] ~v Gendarme.string, { branch = Some b; uuid = Some v })
 
 let scan v = function
   | { branch = None; _ } | { uuid = None; _ } -> failwith "Not initialized"
@@ -27,7 +27,7 @@ let scan v = function
       let open Commands in
       let { s_pos; s_ts; s_meas } = [%decode.Json] ~v scan in
       let measurements = List.map Dot11_iwinfo.measurement s_meas in
-      let* () = Store.push_scan uuid s_ts { position = s_pos; measurements} branch in
+      let* () = Store.push_scan uuid s_ts { position = s_pos; measurements } branch in
       let top = match List.sort (fun Dot11.{ signal = s; _ } { signal = s'; _ } -> compare s' s)
                                 measurements with
         | m::m'::m''::_ -> [m; m'; m'']
@@ -51,10 +51,9 @@ let rqht ({ uuid; _ } as context) = match uuid with
   | None -> failwith "No UUID"
   | Some uuid ->
       let* v = Api.get_heatmap_s ~ssids:Config.config.ssids uuid in
-      Lwt.return ("HEAT\000" ^ [%encode.Json] ~v Gendarme.(pair string (Linalg.Box2.t)), context)
+      Lwt.return ("HEAT\000" ^ [%encode.Json] ~v Gendarme.(pair string Linalg.Box2.t), context)
 
-let rec live ?(context=empty_context) ws =
-  match%lwt Dream.receive ws with
+let rec live ?(context=empty_context) ws = match%lwt Dream.receive ws with
   | Some s -> begin
       let command = match String.split_on_char '\000' s with
         | "INIT"::[] -> init ?id:None

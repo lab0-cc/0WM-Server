@@ -31,12 +31,12 @@ let error_handler (Dream.{ condition; will_send_response; _ } as e) = match cond
       Dream.respond ~status:`Bad_Request ("JSON parse error: " ^ s) >|= Option.some
   | `Exn (Gendarme.Unknown_field field) when will_send_response ->
       Dream.respond ~status:`Bad_Request ("Unknown field: " ^ field) >|= Option.some
-  | `Exn (Gendarme.Type_error) when will_send_response ->
-      Dream.respond ~status:`Bad_Request ("Request type error") >|= Option.some
-  | `Exn (Zwmlib.Image.Unrecognized_format) when will_send_response ->
-      Dream.respond ~status:`Bad_Request ("Unrecognized image format") >|= Option.some
+  | `Exn Gendarme.Type_error when will_send_response ->
+      Dream.respond ~status:`Bad_Request "Request type error" >|= Option.some
+  | `Exn Zwmlib.Image.Unrecognized_format when will_send_response ->
+      Dream.respond ~status:`Bad_Request "Unrecognized image format" >|= Option.some
   | `Exn (Invalid_argument _) when will_send_response ->
-      Dream.respond ~status:`Not_Found ("Not found") >|= Option.some
+      Dream.respond ~status:`Not_Found "Not found" >|= Option.some
   | _ -> Dream.debug_error_handler e
 
 let debug_store ?branch ~store path =
