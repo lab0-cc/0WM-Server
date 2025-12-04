@@ -36,13 +36,19 @@ let (!!) s = match !s with
   | Some s -> s
   | None -> failwith "Store not initialized"
 
+let info = Info.v
+
 let get store path =
   let* s = Backend.main !!store in
   Backend.get s path
 
-let set ~info store path contents =
+let set ~info path store contents =
   let* s = Backend.main !!store in
   Backend.set_exn ~info s path contents
+
+let remove ~info store path =
+  let* s = Backend.main !!store in
+  Backend.remove_exn ~info s path
 
 let find_object id store =
   let* v = get store ["objects"; id] in
@@ -54,8 +60,13 @@ let find_object_j id store =
 
 let push_object id v store =
   Log.debug (fun m -> m "Adding object %s" id);
-  let info = Info.v "Add object %s" id in
-  [%marshal.Json] ~v obj |> set ~info store ["objects"; id]
+  let info = info "Add object %s" id in
+  [%marshal.Json] ~v obj |> set ~info ["objects"; id] store
+
+let remove_object id store =
+  Log.debug (fun m -> m "Removing object %s" id);
+  let info = info "Remove object %s" id in
+  remove ~info store ["objects"; id]
 
 let find_scan id store =
   let* branch = Backend.of_branch !!store ("scans/" ^ id) in
@@ -74,12 +85,12 @@ let begin_scan id store =
 
 let push_scan id ts v store =
   Log.debug (fun m -> m "Adding scan %i into %s" ts id);
-  let info = Info.v "Add scan %i into %s" ts id in
+  let info = info "Add scan %i into %s" ts id in
   [%marshal.Json] ~v s_data |> Backend.set_exn ~info store ["scans"; id; "data"; string_of_int ts]
 
 let set_meta id v store =
   Log.debug (fun m -> m "Setting metadata for %s" id);
-  let info = Info.v "Set metadata for %s" id in
+  let info = info "Set metadata for %s" id in
   [%marshal.Json] ~v s_meta |> Backend.set_exn ~info store ["scans"; id; "meta"]
 
 let cleanup_scan ?(recovery=false) id store =
@@ -98,7 +109,7 @@ let cleanup_scan ?(recovery=false) id store =
       then Lwt.return_unit
       else
         let prefix = if recovery then "[recovery] " else "" in
-        let info = Info.v "%sMerge session %s" prefix id in
+        let info = info "%sMerge session %s" prefix id in
         match%lwt Backend.merge_into ~into:main ~info branch with
         | Ok () ->
             Log.info (fun m -> m "Successfully merged session %s" id);
@@ -110,3 +121,12 @@ let cleanup_scan ?(recovery=false) id store =
 let end_scan id =
   Log.debug (fun m -> m "Ending session %s" id);
   cleanup_scan id
+
+let get_conf store =
+  let* v = get store ["conf"] in
+  [%unmarshal.Json] ~v Types.config |> Lwt.return
+
+let set_conf v store =
+  Log.debug (fun m -> m "Setting global configuration");
+  let info = info "Set global configuration" in
+  [%marshal.Json] ~v Types.config |> set ~info ["conf"] store

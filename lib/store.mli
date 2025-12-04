@@ -36,6 +36,9 @@ val find_object_j : string -> t -> string Lwt.t
 (** Add an object to the store *)
 val push_object : string -> obj -> t -> unit Lwt.t
 
+(** Remove an object from the store *)
+val remove_object : string -> t -> unit Lwt.t
+
 (** Find a scan set in the store *)
 val find_scan : string -> t -> scan Lwt.t
 
@@ -53,3 +56,9 @@ val cleanup_scan : ?recovery:bool -> string -> t -> unit Lwt.t
 
 (** End a scan session *)
 val end_scan : string -> t -> unit Lwt.t
+
+(** Get the global configuration in the store *)
+val get_conf : t -> Types.config Lwt.t
+
+(** Set the global configuration in the store *)
+val set_conf : Types.config -> t -> unit Lwt.t
