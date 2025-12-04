@@ -54,7 +54,9 @@ and merge_pure_bounding_boxes bb bb' = match (bb, bb') with
       { sw; ne = { lat = max ne.lat ne'.lat; long = max ne.long ne'.long } }
   | bb, bb' -> merge_pure_bounding_boxes bb' bb
 
-let merge_bounding_boxes obj obj' = merge_pure_bounding_boxes (bounding_box obj) (bounding_box obj')
+let merge_bounding_boxes l =
+  List.fold_left (fun bb obj -> bounding_box obj |> merge_pure_bounding_boxes bb)
+                 (List.hd l |> bounding_box) (List.tl l)
 
 let normalize l =
   if Polygon l |> bounding_box |> is_degenerate

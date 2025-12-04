@@ -22,8 +22,8 @@ val bounding_box : obj -> box
 (** Merge two bounding boxes *)
 val merge_pure_bounding_boxes : box -> box -> box
 
-(** Compute the bounding box of two objects *)
-val merge_bounding_boxes : obj -> obj -> box
+(** Compute the bounding box of a list of objects *)
+val merge_bounding_boxes : obj list -> box
 
 (** Compute the minimum distance between a point and an object *)
 val obj_distance : point -> obj -> float

@@ -56,7 +56,8 @@ let add id tree store =
         (* If the shape can fit in the tree, we can use an O(n) heuristic *)
         let rec balance visited candidate area = function
           | node::tl ->
-              let* bb = geo_of store node >|= Geo.merge_bounding_boxes shape in
+              let* obj = geo_of store node in
+              let bb = Geo.merge_bounding_boxes [obj; shape] in
               let area' = Geo.box_area bb in
               if area' < area
               then balance (lazy_l node::visited) (lazy (add_rec id bb node)::visited) area' tl
@@ -94,8 +95,8 @@ let add id tree store =
               let rec insert_farthest (node, (bb:Geo.box), area, left as acc) = function
                 | hd::tl ->
                     let* shape = geo_of store hd in
-                    let bb' = Geo.(merge_bounding_boxes shape (Bounding_box bb')) in
-                    let bb'' = Geo.(merge_bounding_boxes shape (Bounding_box bb'')) in
+                    let bb' = Geo.(merge_bounding_boxes [shape; Bounding_box bb']) in
+                    let bb'' = Geo.(merge_bounding_boxes [shape; Bounding_box bb'']) in
                     let area' = Geo.box_area bb' in
                     let area'' = Geo.box_area bb'' in
                     if area' < area && area'' < area
@@ -113,7 +114,36 @@ let add id tree store =
         (* And we insert the remaining nodes into these two subtrees *)
         insert_others (bb', [node'], bb'', [node'']) others in
   let* shape' = geo_of store tree in
-  add_rec id Geo.(merge_bounding_boxes shape shape') tree
+  add_rec id Geo.(merge_bounding_boxes [shape; shape']) tree
+
+let remove id tree store =
+  (* Returns Some _ if something changed, else None *)
+  let rec remove_rec' changed acc = function
+    | l when changed ->
+        let children = List.rev_append acc l in
+        let* objects = Lwt_list.map_p (geo_of store) children in
+        let bb = Geo.merge_bounding_boxes objects in
+        Some (Node (bb, children)) |> Lwt.return
+    | hd::tl -> begin match%lwt remove_rec hd with
+        | changed, None -> remove_rec' changed acc tl
+        | changed, Some n -> remove_rec' changed (n::acc) tl
+      end
+    | [] when changed ->
+        let* objects = Lwt_list.map_p (geo_of store) acc in
+        let bb = Geo.merge_bounding_boxes objects in
+        Some (Node (bb, acc)) |> Lwt.return
+    | [] -> Lwt.return None
+
+  and remove_rec = function
+    | Leaf id' when id' = id -> Lwt.return (true, None)
+    | Leaf _ as n -> Lwt.return (false, Some n)
+    | Node (_, Leaf id'::n::[]) when id' = id -> Lwt.return (true, Some n)
+    | Node (_, n::Leaf id'::[]) when id' = id -> Lwt.return (true, Some n)
+    | Node (_, l) as n -> match%lwt remove_rec' false [] l with
+        | None -> Lwt.return (false, Some n)
+        | n -> Lwt.return (true, n) in
+
+  let* (_, t) = remove_rec tree in Lwt.return t
 
 let to_list =
   let rec to_list_rec acc = function

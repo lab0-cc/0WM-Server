@@ -15,5 +15,8 @@ val sort : ?limit:int -> Geo.point -> t -> Store.t -> (float * string) list Lwt.
 (** Add an object to an R-tree *)
 val add : string -> t -> Store.t -> t Lwt.t
 
+(** Remove an object from an R-tree *)
+val remove : string -> t -> Store.t -> t option Lwt.t
+
 (** Convert an R-tree to a list *)
 val to_list : t -> string list
