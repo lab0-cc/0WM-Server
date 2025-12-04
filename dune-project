@@ -14,8 +14,13 @@
  (depends
   base64
   camlimages
+  domainslib
   dream
-  gendarme-yojson
+  gendarme-csv
+  gendarme-ezjsonm
+  gendarme-toml
+  gendarme-yaml
+  irmin-git
   lwt_ppx
   ppx_marshal
   uuidm))
