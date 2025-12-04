@@ -54,6 +54,6 @@ let init =
   let* () = cleanup_socket () in
   let* () = rebuild_config Runtime.store in
   Log.info (fun m -> m "Initialization completed");
-  Web.server ~error_handler store
+  Lwt.join [Web.server ~error_handler store; Monitor.server ~error_handler]
 
 let () = Lwt_main.run init
