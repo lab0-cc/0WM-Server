@@ -12,11 +12,13 @@ Currently, 0WM is not packaged and some of its dependencies are not live on OPAM
 # Install git and opam
 apt install --assume-yes git opam
 # Init OPAM
-opam init --compiler=5.2.1 --shell-setup
+opam init --compiler=ocaml-option-flambda --shell-setup
 # Update the environment
 eval $(opam env)
-# Pin the unreleased Gendarme dependencies
-opam pin add --no-action --yes git+https://github.com/bensmrs/gendarme
+# Irmin has unreleased changes that are critical to us
+opam pin add --no-action --yes git+https://github.com/mirage/irmin
+# We need to bump one of Dream’s dependencies, so we forked it
+opam pin add --no-action --yes git+https://github.com/bensmrs/dream
 # Clone this repository
 git clone https://github.com/lab0-cc/0WM-Server.git
 # Enter the newly created directory
@@ -24,10 +26,10 @@ cd 0WM-Server
 # Install the dependencies
 opam install --confirm-level=unsafe-yes --deps-only .
 # Compile and run the server
-dune exec src/zwm.exe
+dune exec src/zwmd.exe
 ```
 
-By default, the server listens to `127.0.0.1:8000`; this can be configured in the `config.json` file.
+By default, the server listens to `localhost:8080`; this can be configured using `dune exec src/zwm.exe config edit`.
 
 ## Funding
 
