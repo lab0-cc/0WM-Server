@@ -1,3 +1,5 @@
+(** This module provides types used throughout the library *)
+
 (** The type of walls *)
 type wall = {
   w_seg : Linalg.Segment2.t; (** Segment representing the wall *)
@@ -29,3 +31,6 @@ type env = {
   walls : wall list; (** List of walls *)
   spectrum : spectrum_datum list; (** Spectrum information *)
 }
+
+(** The type of configurations *)
+type config = { interface : string; port : int; aps : string list; ssids : string list } [@@marshal]
