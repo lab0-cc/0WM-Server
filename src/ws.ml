@@ -1,3 +1,4 @@
+module T = Types
 open Zwmlib
 open Lwt.Syntax
 
@@ -24,8 +25,7 @@ let init ?id _ =
 let scan v = function
   | { branch = None; _ } | { uuid = None; _ } -> failwith "Not initialized"
   | { branch = Some branch; uuid = Some uuid } as context ->
-      let open Commands in
-      let { s_pos; s_ts; s_meas } = [%decode.Json] ~v scan in
+      let T.{ s_pos; s_ts; s_meas } = [%decode.Json] ~v T.scan in
       let measurements = List.map Dot11_iwinfo.measurement s_meas in
       let* () = Store.push_scan uuid s_ts { position = s_pos; measurements } branch in
       let top = match List.sort (fun Dot11.{ signal = s; _ } { signal = s'; _ } -> compare s' s)
@@ -33,9 +33,9 @@ let scan v = function
         | m::m'::m''::_ -> [m; m'; m'']
         | l -> l in
       let d_meas = List.map (fun Dot11.{ ap = { ssid; channel; _ }; signal } ->
-                               { ssid; signal; band = Dot11.band_of_channel channel }) top in
-      let v = { d_pos = s_pos; d_meas } in
-      Lwt.return ("DISP\000" ^ [%encode.Json] ~v disp, context)
+                               T.{ ssid; signal; band = Dot11.band_of_channel channel }) top in
+      let v = T.{ d_pos = s_pos; d_meas } in
+      Lwt.return ("DISP\000" ^ [%encode.Json] ~v T.disp, context)
 
 let meta v = function
   | { branch = None; _ } | { uuid = None; _ } -> failwith "Not initialized"
@@ -45,12 +45,14 @@ let meta v = function
       Lwt.return ("", context)
 
 let noap context =
-  Lwt.return ("TRYL\000" ^ [%encode.Json] ~v:Config.config.aps Gendarme.(list string), context)
+  let* { aps; _ } = Store.get_conf Runtime.store in
+  Lwt.return ("TRYL\000" ^ [%encode.Json] ~v:aps Gendarme.(list string), context)
 
 let rqht ({ uuid; _ } as context) = match uuid with
   | None -> failwith "No UUID"
   | Some uuid ->
-      let* v = Api.get_heatmap_s ~ssids:Config.config.ssids uuid in
+      let* { ssids; _ } = Store.get_conf Runtime.store in
+      let* v = Api.get_heatmap_s ~ssids uuid in
       Lwt.return ("HEAT\000" ^ [%encode.Json] ~v Gendarme.(pair string Linalg.Box2.t), context)
 
 let rec live ?(context=empty_context) ws = match%lwt Dream.receive ws with

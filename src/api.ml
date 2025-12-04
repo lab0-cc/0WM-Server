@@ -1,3 +1,4 @@
+module U = Util
 open Lwt.Syntax
 open Lwt.Infix
 open Types
@@ -5,14 +6,26 @@ open Zwmlib
 open Linalg
 open Types
 
-let json = Dream.json ~headers:[("Access-Control-Allow-Origin", "*")]
-let html = Dream.html ~headers:[("Access-Control-Allow-Origin", "*")]
-let svg s = Dream.response ~headers:[("Content-Type", "image/svg+xml");
-                                     ("Access-Control-Allow-Origin", "*")] s |> Lwt.return
+let rtree_mutex = Mutex.create ()
 
 let get_map_s id = Store.find_object id Runtime.store
 
-let get_map id = Store.find_object_j id Runtime.store >>= json
+let get_map id = Store.find_object_j id Runtime.store >>= U.json
+
+let delete_map id =
+  let* map = Store.find_object id Runtime.store in
+  let* () = Store.remove_object id Runtime.store in
+  Mutex.lock rtree_mutex;
+  let* () = match !Runtime.rtree with
+  | None -> Lwt.return_unit
+  | Some r ->
+      let* rtree = Rtree.remove id r Runtime.store in
+      Lwt.return (Runtime.rtree := rtree) in
+  Mutex.unlock rtree_mutex;
+  Sys.remove map.path;
+  let ext = Filename.extension map.path in
+  Filename.remove_extension map.path ^ "_thumb" ^ ext |> Sys.remove;
+  U.ok ()
 
 let get_heatmap_s ~ssids id =
   let t = Hashtbl.create 10 in
@@ -43,7 +56,7 @@ let get_heatmap_s ~ssids id =
   let f = Sim.build_predictor ~cfg:sim_cfg env in
   Render.render ~cfg:render_cfg ~f env |> Lwt.return
 
-let get_heatmap ~ssids id = let* (img, _) = get_heatmap_s ~ssids id in svg img
+let get_heatmap ~ssids id = let* (img, _) = get_heatmap_s ~ssids id in U.svg img
 
 let format_map_sl recurse v =
   let* res =
@@ -54,12 +67,12 @@ let format_map_sl recurse v =
                      compare name name') in
       [%encode.Json] ~v Gendarme.(map string Store.obj) |> Lwt.return
     else [%encode.Json] ~v Gendarme.(list string) |> Lwt.return in
-  json res
+  U.json res
 
 let get_maps ?latitude ?longitude ?altitude ?(accuracy=0.) ?(altitude_accuracy=0.) ?(limit=1000)
              recurse () = match !Runtime.rtree, latitude, longitude with
-  | None, _, _ when recurse -> [%encode.Json] ~v:[] Gendarme.(map string string) |> json
-  | None, _, _ -> [%encode.Json] Gendarme.empty_list |> json
+  | None, _, _ when recurse -> [%encode.Json] ~v:[] Gendarme.(map string string) |> U.json
+  | None, _, _ -> [%encode.Json] Gendarme.empty_list |> U.json
   | Some rtree, None, _ | Some rtree, _, None -> Rtree.to_list rtree |> format_map_sl recurse
   | Some rtree, Some lat, Some long ->
       let* maps = Rtree.sort ~limit (Geo.{ lat; long }) rtree Runtime.store
@@ -82,10 +95,10 @@ let get_maps ?latitude ?longitude ?altitude ?(accuracy=0.) ?(altitude_accuracy=0
       then
         let v = List.map (fun (id, mr_map, mr_dst, mr_cfd) -> (id, { mr_dst; mr_cfd; mr_map }))
                          maps in
-        [%encode.Json] ~v (Gendarme.map Gendarme.string map_rec) |> json
+        [%encode.Json] ~v (Gendarme.map Gendarme.string map_rec) |> U.json
       else
         let v = List.map (fun (id, _, m_dst, m_cfd) -> (id, { m_dst; m_cfd })) maps in
-        [%encode.Json] ~v (Gendarme.map Gendarme.string map) |> json
+        [%encode.Json] ~v (Gendarme.map Gendarme.string map) |> U.json
 
 let process_shapes m =
   let rec process_shapes_rec acc = function
@@ -96,11 +109,14 @@ let process_shapes m =
     | [] -> acc in
   process_shapes_rec []
 
-let update_rtree id = match !Runtime.rtree with
+let push_to_rtree id =
+  Mutex.lock rtree_mutex;
+  let* () = match !Runtime.rtree with
   | None -> Lwt.return (Runtime.rtree := Some (Rtree.singleton id))
   | Some r ->
       let* rtree = Rtree.add id r Runtime.store in
-      Lwt.return (Runtime.rtree := Some rtree)
+      Lwt.return (Runtime.rtree := Some rtree) in
+  Mutex.unlock rtree_mutex |> Lwt.return
 
 let push_map { anchors = (a, a', a'' as anchors); structure; walls;
                floorplan = { data; width; height }; zmin; zmax; name } =
@@ -132,5 +148,5 @@ let push_map { anchors = (a, a', a'' as anchors); structure; walls;
     | _ -> failwith "Irregular wall") in
   let* () = Store.(push_object id { zmin; zmax; path; anchors; structure; walls; width; height; name }
                                   Runtime.store) in
-  let* () = update_rtree id in
-  html "ok"
+  let* () = push_to_rtree id in
+  U.ok ()

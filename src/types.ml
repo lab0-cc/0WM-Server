@@ -1,3 +1,5 @@
+(** This module provides the types used throughout the API *)
+
 [%%marshal.load Json]
 
 open Zwmlib.Linalg
@@ -24,4 +26,18 @@ type payload = {
   walls : point list list [@json];
   zmin : float [@json];
   zmax : float [@json];
+} [@@marshal]
+
+type scan = {
+  s_pos : point3 [@json "position"];
+  s_ts : int [@json "timestamp"];
+  s_meas : Zwmlib.Dot11_iwinfo.t list [@json "measurements"];
+} [@@marshal]
+
+type disp_one = { ssid : string option [@json]; signal : int [@json]; band : int [@json] }
+                [@@marshal]
+
+type disp = {
+  d_pos : point3 [@json "position"];
+  d_meas : disp_one list [@json "measurements"];
 } [@@marshal]
