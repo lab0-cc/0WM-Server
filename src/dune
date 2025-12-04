@@ -1,4 +1,11 @@
 (executable
+  (name zwmd)
+  (libraries dream irmin-git.unix uuidm zwmlib)
+  (modules api monitor runtime types util web ws zwmd)
+  (preprocess (pps lwt_ppx ppx_marshal)))
+
+(executable
   (name zwm)
-  (libraries dream gendarme-ezjsonm irmin-git.unix uuidm zwmlib)
+  (libraries cohttp-lwt-unix conduit-lwt cmdliner zwmlib)
+  (modules zwm zwm_fmt zwm_io)
   (preprocess (pps lwt_ppx ppx_marshal)))
