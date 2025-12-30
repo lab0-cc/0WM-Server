@@ -28,7 +28,7 @@ val merge_bounding_boxes : obj list -> box
 (** Compute the minimum distance between a point and an object *)
 val obj_distance : point -> obj -> float
 
-(** Compute a bounding box area *)
+(** Compute a bounding box angular area. This does not compute surfaces. *)
 val box_area : box -> float
 
 (** Extract all the segments of a shape *)

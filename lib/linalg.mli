@@ -64,7 +64,8 @@ module Box2 : sig
   (** The type of boxes *)
   type t = { b_min : point; b_max : point } [@@marshal]
 
-  (** Get the bounding box from a list of points *)
+  (** Get the bounding box from a list of points. Defaults to a null box around (0,0) for
+      convenience *)
   val of_points : point list -> t
 
   (** Get the diagonal vector from the given box *)
