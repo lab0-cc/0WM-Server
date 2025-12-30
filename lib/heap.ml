@@ -31,7 +31,7 @@ module Make (T : S) = struct
         Heap { item; left = add value content right; right = left; size = size + 1 }
 
   let rec pop = function
-    | Empty -> failwith "pop"
+    | Empty -> invalid_arg "pop"
     | Heap { item; left = Empty; right; _ } -> (item, right)
     | Heap { item; left; right = Empty; _ } -> (item, left)
     | Heap { item; left = Heap { item = l; _ } as left; right = Heap { item = r; _ } as right;
@@ -44,7 +44,7 @@ module Make (T : S) = struct
   and drop h = let (_, h) = pop h in h
 
   let bound = function
-    | Empty -> failwith "bound"
+    | Empty -> invalid_arg "bound"
     | Heap { item; _ } -> item.value
 
   let size = function

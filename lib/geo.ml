@@ -23,7 +23,7 @@ let is_degenerate { sw; ne } = sw.long > ne.long
 
 let rec bounding_box = function
   | Bounding_box bb -> bb
-  | Polygon [] -> failwith "bounding_box"
+  | Polygon [] -> invalid_arg "bounding_box"
   | Polygon (hd::tl) ->
       let rec bb_rec' sw ne = function
         | { lat; long }::tl when long < 0. ->
@@ -39,7 +39,7 @@ let rec bounding_box = function
                                       { lat = max ne.lat lat; long = max ne.long long} tl
         | [] -> { sw; ne } in
       bb_rec hd hd tl
-  | Multi_polygon [] -> failwith "bounding_box"
+  | Multi_polygon [] -> invalid_arg "bounding_box"
   | Multi_polygon (hd::tl) ->
       let bb = Polygon hd |> bounding_box in
       List.fold_left (fun acc p -> Polygon p |> bounding_box |> merge_pure_bounding_boxes acc) bb tl
