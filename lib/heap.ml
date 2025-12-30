@@ -51,13 +51,15 @@ module Make (T : S) = struct
     | Empty -> 0
     | Heap { size; _ } -> size
 
-  let rec rev_merge acc l l' = match l, l' with
-    | hd::_, hd'::tl' when T.property hd.value hd'.value -> rev_merge (hd'::acc) l tl'
-    | hd::tl, _ -> rev_merge (hd::acc) tl l'
-    | _, _ -> l @ l' @ acc
-  let rec rev_sort = function
-    | Empty -> []
-    | Heap { item; left; right; _ } -> item::rev_merge [] (rev_sort left) (rev_sort right)
+  let rec merge h h' = match h, h' with
+    | Empty, h | h, Empty -> h
+    | Heap h, Heap { item = { value; _ }; _ } when T.property h.item.value value ->
+        Heap { h with left = merge h.right h'; right = h.left }
+    | _, Heap h' -> Heap { h' with left = merge h h'.right; right = h'.left }
 
-  let sort h = rev_sort h |> List.rev
+  let sort h =
+    let rec sort_rec acc = function
+      | Empty -> acc
+      | Heap { item; left; right; _ } -> merge left right |> sort_rec (item::acc) in
+    sort_rec [] h
 end
