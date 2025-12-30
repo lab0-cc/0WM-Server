@@ -19,7 +19,7 @@ let range_of_ht_op = function
   | { ht_width = HT_any; ht_chan; ht_off = HT_SCN } -> (ht_chan, ht_chan)
   | { ht_width = HT_any; ht_chan; ht_off = HT_SCA } -> (ht_chan, ht_chan + 4)
   | { ht_width = HT_any; ht_off = HT_SCX; _ } -> raise (Reserved 2)
-  | { ht_width = HT_any; ht_chan; ht_off = HT_SCB } -> (ht_chan, ht_chan - 4)
+  | { ht_width = HT_any; ht_chan; ht_off = HT_SCB } -> (ht_chan - 4, ht_chan)
 
 let ranges_of_ht_op op = [range_of_ht_op op]
 
