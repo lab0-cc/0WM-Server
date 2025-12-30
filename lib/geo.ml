@@ -63,7 +63,7 @@ let normalize l =
   then List.map (fun p -> if p.long < 0. then { p with long = p.long +. 360. } else p) l
   else l
 
-let obj_distance p = function
+let rec obj_distance p = function
   | Bounding_box ({ sw; ne } as bb) ->
       (* For convenience, we don’t deal with bounding boxes containing poles. And that’s fine! *)
       let lat = max p.lat sw.lat |> min ne.lat in
@@ -96,7 +96,7 @@ let obj_distance p = function
         (List.rev l |> List.hd |> xy_of_ll, 0, infinity) l in
       (* A 0 winding number means the point is outside the polygon *)
       if wn = 0 then d else 0.
-  | Multi_polygon _ -> failwith "obj_distance/Multi_polygon: Not implemented"
+  | Multi_polygon l -> obj_distance p (Polygon (List.concat l))
 
 let area = function
   | Bounding_box ({ sw; ne } as bb) when is_degenerate bb ->
