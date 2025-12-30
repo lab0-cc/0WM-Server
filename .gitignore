@@ -1,2 +1,7 @@
 *.swp
-_build
+.DS_Store
+/_build
+/_coverage
+/build
+/data
+/database
