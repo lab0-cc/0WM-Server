@@ -1,4 +1,5 @@
 (library
  (name zwmlib)
  (libraries base64 camlimages.core camlimages.jpeg camlimages.png domainslib gendarme-csv gendarme-ezjsonm gendarme-toml gendarme-yaml irmin-git.unix str)
- (preprocess (pps lwt_ppx ppx_marshal)))
+ (preprocess (pps lwt_ppx ppx_marshal))
+ (instrumentation (backend bisect_ppx)))

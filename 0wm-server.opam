@@ -9,7 +9,9 @@ homepage: "https://github.com/lab0-cc/0WM-Server.git"
 bug-reports: "https://github.com/lab0-cc/0WM-Server/issues"
 depends: [
   "dune" {>= "2.7"}
+  "alcotest-lwt" {with-test}
   "base64"
+  "bisect_ppx" {dev & >= "2.5.0"}
   "camlimages"
   "domainslib"
   "dream"

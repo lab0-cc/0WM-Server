@@ -12,7 +12,9 @@
  (name 0wm-server)
  (synopsis "0WM Server")
  (depends
+  (alcotest-lwt :with-test)
   base64
+  (bisect_ppx (and :dev (>= 2.5.0)))
   camlimages
   domainslib
   dream

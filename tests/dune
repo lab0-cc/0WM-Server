@@ -1,0 +1,4 @@
+(test
+ (name run_tests)
+ (libraries alcotest-lwt zwmlib)
+ (preprocess (pps lwt_ppx ppx_marshal)))
