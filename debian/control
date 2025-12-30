@@ -1,0 +1,24 @@
+Source: 0wm-server
+Section: misc
+Priority: optional
+Maintainer: Benjamin Somers <benjamin.somers@resel.fr>
+Rules-Requires-Root: no
+Build-Depends:
+ debhelper-compat (= 13),
+ ca-certificates,
+ git,
+ opam,
+ pkgconf,
+ libssl-dev,
+ libgmp-dev,
+ libev-dev,
+ libffi-dev
+Standards-Version: 4.7.2
+Homepage: https://0wm.lab0.cc
+
+Package: 0wm-server
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: 0WM Server Daemon
+ Next-generation Wi-Fi mapping solution using off-the-shelf components and open
+ standards to perform hassle-free, large-scale Wi-Fi surveys.

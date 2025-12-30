@@ -1,0 +1,70 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE=1
+
+# Keep OPAM contained inside the build tree.
+OPAMROOT      := $(CURDIR)/debian/.opamroot
+OPAMSWITCHDIR := $(CURDIR)/debian/.opamswitch
+OPAMHOME      := $(CURDIR)/debian/.home
+
+# Compiler flavor
+OCAML_VARIANT ?= ocaml-variants.5.2.1+options
+OCAML_OPTIONS ?= ocaml-option-flambda
+
+# Dune options
+DUNE_PROFILE  := release
+
+# Pins
+## Irmin has unreleased changes that we are using
+IRMIN_PIN := git+https://github.com/mirage/irmin#7a09a06fff67bc4981faca36a332c51fc16e819e
+## We bumped one of Dream’s dependencies to fix critical bugs, but it hasn’t been merged upstream
+DREAM_PIN := git+https://github.com/bensmrs/dream#5126308698188454ad89fc1e6e6e5269da7845ae
+
+OPAM := HOME=$(OPAMHOME) OPAMROOT=$(OPAMROOT) OPAMCONFIRMLEVEL=unsafe-yes opam
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	# Initialize OPAM
+	mkdir -p $(OPAMHOME) $(OPAMROOT)
+	$(OPAM) init --bare --disable-sandboxing
+
+	# Create a local switch directory and compile OCaml
+	$(OPAM) switch create --yes $(OPAMSWITCHDIR) $(OCAML_VARIANT) $(OCAML_OPTIONS)
+
+	# Add pins
+	$(OPAM) pin add --switch $(OPAMSWITCHDIR) --no-action $(IRMIN_PIN)
+	$(OPAM) pin add --switch $(OPAMSWITCHDIR) --no-action $(DREAM_PIN)
+
+	# Install build deps for this project
+	$(OPAM) install --switch $(OPAMSWITCHDIR) --deps-only --with-test .
+
+override_dh_auto_build:
+	# Build the binaries
+	$(OPAM) exec --switch $(OPAMSWITCHDIR) -- dune build --profile $(DUNE_PROFILE)
+
+	# Build the manpages
+	mkdir debian/man
+	_build/default/src/zwm.exe --help=groff | sed "s/\\N'45'/\\-/g" > debian/man/0wm.1
+	_build/default/src/zwm.exe config --help=groff | sed "s/\\N'45'/\\-/g" > debian/man/0wm-config.1
+
+override_dh_auto_test:
+	# Run the tests
+	$(OPAM) exec --switch $(OPAMSWITCHDIR) -- dune runtest --profile $(DUNE_PROFILE)
+
+override_dh_auto_install:
+	# Install binary
+	install -d debian/0wm-server/usr/bin
+	install -d debian/0wm-server/usr/libexec/0wm
+	install -m 0755 _build/default/src/zwm.exe debian/0wm-server/usr/bin/0wm
+	install -m 0750 _build/default/src/zwmd.exe debian/0wm-server/usr/libexec/0wm/0wmd
+
+override_dh_auto_clean:
+	# Clean dune outputs
+	dune clean || true
+	# Remove local opam state
+	rm -rf $(OPAMROOT) $(OPAMSWITCHDIR) $(OPAMHOME)
+
+execute_after_dh_auto_install:
+	dh_installsysusers

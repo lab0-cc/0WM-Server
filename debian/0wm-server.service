@@ -1,0 +1,21 @@
+[Unit]
+Description=0WM Server Daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/libexec/0wm/0wmd
+Environment=ZWM_SHARE=/usr/share/0wm
+Restart=on-failure
+RestartSec=2
+DynamicUser=yes
+Group=zwm
+StateDirectory=0wm
+StateDirectoryMode=0750
+RuntimeDirectory=0wm
+RuntimeDirectoryMode=0750
+UMask=0007
+
+[Install]
+WantedBy=multi-user.target
