@@ -49,7 +49,7 @@ let rec server ~error_handler store =
     Dream.options "/maps" (fun _ -> Dream.respond ~headers:[("Access-Control-Allow-Origin", "*"); ("Access-Control-Allow-Headers", "*")] ~status:`No_Content "");
     Dream.get "/maps/:id" (fun request -> Dream.param request "id" |> Api.get_map);
     Dream.delete "/maps/:id" (fun request -> Dream.param request "id" |> Api.delete_map);
-    Dream.get "/data/**" (Dream.static "data");
+    Dream.get "/data/**" (Runtime.var "data" |> Dream.static);
     Dream.get "/heatmaps/:id" (fun request ->
       let ssids = Dream.queries request "ssid" in
       Dream.param request "id" |> Api.get_heatmap ~ssids
@@ -59,9 +59,10 @@ let rec server ~error_handler store =
     Dream.get "/debug/store/**" (fun request ->
       (Dream.path [@alert "-deprecated"]) request |> List.filter ((<>) "")
       |> debug_store ?branch:(Dream.query request "branch") ~store);
-    Dream.get "/swagger/**" (Dream.static "swagger");
-    Dream.get "/" (Dream.from_filesystem "static" "api.html");
-    Dream.get "/api.yml" (Dream.from_filesystem "static" "api.yml"); (* TODO: generate this file *)
+    Dream.get "/swagger/**" (Runtime.static "swagger" |> Dream.static);
+    Dream.get "/" (Dream.from_filesystem (Runtime.static "static") "api.html");
+    (* TODO: generate this file *)
+    Dream.get "/api.yml" (Dream.from_filesystem (Runtime.static "static") "api.yml");
     Dream.get "/ws" (fun _ -> Dream.websocket Ws.live);
   ] in
   signal := None;

@@ -10,4 +10,4 @@ type t
 val of_base64 : string -> t
 
 (** Save an image and its thumbnail *)
-val save : string -> t -> string
+val save : path:string -> string -> t -> string

@@ -29,6 +29,15 @@ let rebuild_config store = match%lwt Zwmlib.Store.get_conf store with
       Zwmlib.Store.set_conf (Gendarme.default Zwmlib.Types.config ()) store
   | _ -> Lwt.return_unit
 
+let init_data_dir () =
+  let path = Runtime.var "data" in
+  match%lwt Lwt_unix.stat path with
+    | { Unix.st_kind = S_DIR; _ } -> Lwt.return_unit
+    | _ -> invalid_arg "The data path is not a directory"
+    | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
+        Log.info (fun m -> m "Creating data directory");
+        Lwt_unix.mkdir path 0o750
+
 let error_handler (Dream.{ condition; will_send_response; _ } as e) = match condition with
   | `Exn (Util.Bad_parameter parameter) when will_send_response ->
       Dream.respond ~status:`Bad_Request ("Bad parameter: " ^ parameter) >|= Option.some
@@ -51,6 +60,7 @@ let init =
   let* branches = Runtime.Store.Branch.list store >|= List.filter (String.starts_with ~prefix:"scans/") in
   let* () = cleanup_open_sessions Runtime.store branches in
   let* () = rebuild_rtree store in
+  let* () = init_data_dir () in
   let* () = cleanup_socket () in
   let* () = rebuild_config Runtime.store in
   Log.info (fun m -> m "Initialization completed");

@@ -3,6 +3,12 @@
 module Store : module type of Irmin_git_unix.FS.KV (Irmin.Contents.Json_value)
 module Proj : module type of Irmin.Json_tree (Store)
 
+(** Build a path in the dynamic data directory *)
+val var : string -> string
+
+(** Build a path in the static data directory *)
+val static : string -> string
+
 (** Irmin configuration *)
 val config : Irmin.config
 

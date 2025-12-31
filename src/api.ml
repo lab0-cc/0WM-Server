@@ -123,7 +123,7 @@ let push_map { anchors = (a, a', a'' as anchors); structure; walls;
   let ((src, dst), (src', dst'), (src'', dst'')) =
     Anchor.(to_points a, to_points a', to_points a'') in
   let id = Uuidm.(v4_gen (Random.State.make_self_init ()) () |> to_string) in
-  let path = Image.(of_base64 data |> save id) in
+  let path = Image.(of_base64 data |> save ~path:(Runtime.var "data") id) in
   let src_v = Vector2.of_points src src' in
   let src_v' = Vector2.of_points src src'' in
   let dst_v = Vector2.of_points dst dst' in

@@ -13,8 +13,8 @@ let of_base64 data = match Str.(bounded_split (regexp ",") data 2) with
   | _ -> raise Unrecognized_format
 
 (** Save an image and its thumbnail *)
-let save id image =
-  let prefix = "data/" ^ id in
+let save ~path id image =
+  let prefix = Filename.concat path id in
   let (suffix, data) = match image with
     | Png data -> ("." ^ "png", data)
     | Jpeg data -> ("." ^ "jpeg", data) in
