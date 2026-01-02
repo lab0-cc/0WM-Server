@@ -17,7 +17,7 @@ let config_show fmt =
   print_endline config;
   Lwt.return Cmd.Exit.ok
 
-(** [zwm config show] subcommand *)
+(** [0wm config show] subcommand *)
 let zwm_config_show =
   let doc = "Show the 0WM daemon configuration" in
   let man = [
@@ -62,7 +62,7 @@ let config_edit fmt =
   Sys.remove filename;
   res
 
-(** [zwm config edit] subcommand *)
+(** [0wm config edit] subcommand *)
 let zwm_config_edit =
   let doc = "Edit the application configuration" in
   let man = [
@@ -72,7 +72,7 @@ let zwm_config_edit =
   let info = Cmd.info "edit" ~doc ~man in
   Term.(const config_edit $ format_arg) |> Cmd.v info
 
-(** [zwm config] subcommand *)
+(** [0wm config] subcommand *)
 let zwm_config =
   let doc = "Configuration related commands" in
   let man = [
@@ -90,7 +90,7 @@ let () =
     `S Manpage.s_description;
     `P "This tool allows to interact locally with the 0WM daemon.";
   ] in
-  let info = Cmd.info "zwm" ~version:"0.1" ~doc ~man in
+  let info = Cmd.info "0wm" ~version:"0.1" ~doc ~man in
   let default = Term.(const (`Help (`Auto, None)) |> ret) in
   match Cmd.group info ~default [zwm_config] |> Cmd.eval_value with
   | Ok (`Ok action) -> begin match Lwt_main.run action with
