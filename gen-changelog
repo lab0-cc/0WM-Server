@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat >&2 <<EOF
+Usage: $0 [-d <distribution>] [-f <flavor>] [-i <initial date>] [-m <maintainer>] [-p <package name>]
+
+Generate package changelog entries. Currently, only Debian changelogs are supported in nightly flavor.
+$0 needs to be run at the root of a Git repository.
+EOF
+  exit 2
+}
+
+die() {
+  echo "$1" >&2
+  exit 1
+}
+
+# Check if running at the root of a Git repository
+[ -d ".git" ] || die "$0 needs to be run at the root of a Git repository"
+
+# Sane defaults
+DIST="debian/trixie"
+FLAVOR="nightly"
+INITIAL_DATE="2000-01-01"
+MAINTAINER="$(head -n1 AUTHORS)"
+PKG="$(basename "$(pwd)" | perl -ne 'print lc')"
+
+# Parse overrides
+while getopts "d:f:i:m:p:" opt; do
+  case "$opt" in
+    d) DIST="$OPTARG";;
+    f) FLAVOR="$OPTARG";;
+    i) INITIAL_DATE="$OPTARG";;
+    m) MAINTAINER="$OPTARG";;
+    p) PKG="$OPTARG";;
+    *) usage;;
+  esac
+done
+
+# Current limitations
+[[ "$DIST" = debian/* ]] || die "Only Debian changelogs are supported yet"
+[ "$FLAVOR" = "nightly" ] || die "Only nightly flavor is supported yet"
+
+# Date validation
+INITIAL_DATE="$(date -d "$INITIAL_DATE" +%Y-%m-%d)" || die "Invalid initial date"
+INITIAL_DATE_BEFORE="$(date -d "$INITIAL_DATE - 1 day" +%Y-%m-%d)"
+
+# Collect days with commits after the initial date
+mapfile -t all_days < <(TZ=UTC git log --since="$INITIAL_DATE 00:00:00" --format='%cd' --date=short-local | sort -ru)
+
+# Check if there are commits to collect before the initial date
+if [ "$(git rev-list -n 1 --before="$INITIAL_DATE_BEFORE 23:59:59" HEAD)" ]; then
+  all_days+=("$INITIAL_DATE_BEFORE")
+fi
+
+first=1
+for day in "${all_days[@]}"; do
+  if [ $first -eq 0 ]; then
+    printf '\n'
+  fi
+  first=0
+
+  if [ "$day" = "$INITIAL_DATE_BEFORE" ]; then
+    range=(--until="$day 23:59:59")
+  else
+    range=(--since="$day 00:00:00" --until="$day 23:59:59")
+  fi
+
+  # Gather commits
+  commits="$(git log "${range[@]}" --no-merges --pretty=format:'%h%x09%s')"
+
+  day_after="$(date -d "$day + 1 day" +%Y-%m-%d)"
+  version="0~git${day_after//-/}-1"
+  footer_date="$(date -d "$day_after 00:00:00" -R)"
+
+  cat <<EOF
+${PKG} (${version}) ${DIST#debian/}; urgency=low
+
+  ${day_after} nightly build. Commits:
+
+EOF
+
+  while IFS='	' read -r sha title; do
+    [ -n "$sha" ] || continue
+    printf "  * %s: %s\n" "$sha" "$title"
+  done <<<"$commits"
+
+  cat <<EOF
+
+ -- ${MAINTAINER}  ${footer_date}
+EOF
+done
