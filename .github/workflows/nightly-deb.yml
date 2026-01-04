@@ -1,0 +1,62 @@
+name: Nightly Debian packaging
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  package-deb:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Install build tooling
+        run: |
+          set -euxo pipefail
+          echo "deb http://archive.ubuntu.com/ubuntu noble-backports main universe multiverse restricted" | sudo tee /etc/apt/sources.list.d/noble-backports.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends debian-archive-keyring debootstrap git-buildpackage mmdebstrap sbuild/noble-backports schroot
+      - name: Create trixie sbuild chroot
+        run: |
+          set -euxo pipefail
+          sudo sbuild-createchroot trixie /opt/trixie-chroot
+          sudo sbuild-adduser "$USER"
+      - name: Generate debian/changelog
+        run: ./gen-changelog -i 2026-01-04 -p 0wm-server > debian/changelog
+      - name: Build package
+        run: gbp buildpackage --verbose
+      - name: Cleanup build directory
+        run: rm -f build/*.build{,info}
+      - name: Look for artifacts
+        id: artifacts
+        run: |
+          set -euxo pipefail
+          if [ -d "build" ]; then
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Upload artifacts
+        if: steps.artifacts.outputs.upload == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: build-${{ github.run_id }}
+          path: build
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Prepare Pages artifacts
+        if: steps.artifacts.outputs.upload == 'true'
+        run: |
+          set -euxo pipefail
+          for file in build/*; do
+            ln -s "$(basename "$file")" "$(perl -pe 's/_0[^_.]*/_nightly/' <<< "$file")"
+          done
+      - name: Publish to GitHub Pages
+        if: steps.artifacts.outputs.upload == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build
+          destination_dir: debian/trixie
+          keep_files: true
