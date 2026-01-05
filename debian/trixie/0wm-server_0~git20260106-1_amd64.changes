@@ -15,16 +15,16 @@ Changes:
  .
    2026-01-06 nightly build. Commits:
  .
-   * af6c9ac: github: Add nightly Debian packaging
+   * 86a3d56: github: Add nightly Debian packaging
 Checksums-Sha1:
- 1012363f48c1019b8e17f17fc00bc4b4c8eb8e1d 6616644 0wm-server-dbgsym_0~git20260106-1_amd64.deb
- 5fc93d7a0b89f10d0d646589ea97121f3d7c60cd 6414 0wm-server_0~git20260106-1_amd64.buildinfo
- 11f724a0922783f7c78e3834fcfc6fd0520c2c73 10731380 0wm-server_0~git20260106-1_amd64.deb
+ 16ed862c99a11474d4ad361da4ed94a9d3339927 6619264 0wm-server-dbgsym_0~git20260106-1_amd64.deb
+ fafde1bbb246fd853fe495a16431f7c4a7ad20dc 6414 0wm-server_0~git20260106-1_amd64.buildinfo
+ c5b81312d58c3b8d36dedf2f5ac4a55f60d9a2ee 10731856 0wm-server_0~git20260106-1_amd64.deb
 Checksums-Sha256:
- 65bdf9f5991d3514872f49079c724afc186eb8e6db5080ce2991a426da4f4c2c 6616644 0wm-server-dbgsym_0~git20260106-1_amd64.deb
- 9018018f8fc3f111c2349db8b91635e58429769577f8907c2bc77594750b08fb 6414 0wm-server_0~git20260106-1_amd64.buildinfo
- 5a9fa3ad3b8edf071ae359d9eb49a6147a2d59c27cf7382e0f44f1112625e97c 10731380 0wm-server_0~git20260106-1_amd64.deb
+ 95a01a10c73d45b1259d44c49d753ed33aba7ea4728190093dc05f532f64a874 6619264 0wm-server-dbgsym_0~git20260106-1_amd64.deb
+ 9eeca24737813e7a9f4e315e920afa4bb026b802c7a7778bd54eac8f4e9e1c1a 6414 0wm-server_0~git20260106-1_amd64.buildinfo
+ 4a01bbb8d16cd5a91ac2033e855300c3195403c4008aa2309c3cf0c81ba54f2a 10731856 0wm-server_0~git20260106-1_amd64.deb
 Files:
- 7199739768366e631680ea457bd4708a 6616644 debug optional 0wm-server-dbgsym_0~git20260106-1_amd64.deb
- cd7e68755fd39ec9cee32cb05f0ded5c 6414 misc optional 0wm-server_0~git20260106-1_amd64.buildinfo
- 953a299466e363266970ad186135d719 10731380 misc optional 0wm-server_0~git20260106-1_amd64.deb
+ 5afd488961eed9ece89c627b33f5d7d9 6619264 debug optional 0wm-server-dbgsym_0~git20260106-1_amd64.deb
+ 24bd4d1c9dc1c364833cf603b5520323 6414 misc optional 0wm-server_0~git20260106-1_amd64.buildinfo
+ b7d434f64545f808dd11526779e25322 10731856 misc optional 0wm-server_0~git20260106-1_amd64.deb
