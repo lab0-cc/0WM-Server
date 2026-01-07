@@ -18,13 +18,13 @@ Changes:
    * 86a3d56: github: Add nightly Debian packaging
 Checksums-Sha1:
  9c8bbfb6f3617879d3ecee075c89eb28d8b513c0 6619148 0wm-server-dbgsym_0~git20260106-1_amd64.deb
- 08b8126c10d5729c3bce3254c2a389cf34e20c8f 6414 0wm-server_0~git20260106-1_amd64.buildinfo
+ 495b094e5b7e67af070e8a374c2e73a737967674 6414 0wm-server_0~git20260106-1_amd64.buildinfo
  44aa0896f1e488259ca46861bd1e62958afc4803 10739816 0wm-server_0~git20260106-1_amd64.deb
 Checksums-Sha256:
  b57ba3a6b5c4ca93c1161b4f4c3f82c8e5b73cc4e749ddfb3b0a0e3d527c950e 6619148 0wm-server-dbgsym_0~git20260106-1_amd64.deb
- 7e272a6b8f27222ddf194f399730d79ec77caa40056b513a8e3de1af17636fb3 6414 0wm-server_0~git20260106-1_amd64.buildinfo
+ d63f97bad7fbdc9028dd4c852beb76143b4216ba6d2be8264bfdf5224132ecdc 6414 0wm-server_0~git20260106-1_amd64.buildinfo
  a1aa62802f3d14d1217332fe6419ffd21930d1320d5b4820c1e6b4d1b8503c94 10739816 0wm-server_0~git20260106-1_amd64.deb
 Files:
  4a55161b1c21fa4e9e331ec305f482f0 6619148 debug optional 0wm-server-dbgsym_0~git20260106-1_amd64.deb
- d64bccf1c3199b6f972b859828849508 6414 misc optional 0wm-server_0~git20260106-1_amd64.buildinfo
+ 3c37bad9cba89f880ed256eee31f43fc 6414 misc optional 0wm-server_0~git20260106-1_amd64.buildinfo
  f0ff3aef3fad07c41b8c73ef2641a7e7 10739816 misc optional 0wm-server_0~git20260106-1_amd64.deb
