@@ -7,25 +7,38 @@ permissions:
   contents: write
 jobs:
   package-deb:
-    runs-on: ubuntu-latest
+    name: Package for ${{ matrix.target.distribution }}/${{ matrix.target.suite }} (${{ matrix.arch.os }})
+    runs-on: ${{ matrix.arch.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - { name: amd64, os: ubuntu-24.04 }
+          - { name: arm64, os: ubuntu-24.04-arm }
+        target:
+          - { distribution: debian, suite: bookworm }
+          - { distribution: debian, suite: trixie }
+          - { distribution: debian, suite: forky }
+          - { distribution: ubuntu, suite: jammy }
+          - { distribution: ubuntu, suite: noble }
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Add Noble backports (amd64)
+        run: echo "deb http://archive.ubuntu.com/ubuntu noble-backports main universe multiverse restricted" | sudo tee /etc/apt/sources.list.d/noble-backports.list
+        if: matrix.arch.os == 'ubuntu-24.04'
+      - name: Add Noble backports (arm64)
+        run: echo "deb http://ports.ubuntu.com/ubuntu-ports noble-backports main universe multiverse restricted" | sudo tee /etc/apt/sources.list.d/noble-backports.list
+        if: matrix.arch.os == 'ubuntu-24.04-arm'
       - name: Install build tooling
         run: |
           set -euxo pipefail
-          echo "deb http://archive.ubuntu.com/ubuntu noble-backports main universe multiverse restricted" | sudo tee /etc/apt/sources.list.d/noble-backports.list
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends debian-archive-keyring debootstrap git-buildpackage mmdebstrap sbuild/noble-backports schroot
-      - name: Create trixie sbuild chroot
-        run: |
-          set -euxo pipefail
-          sudo sbuild-createchroot trixie /opt/trixie-chroot
-          sudo sbuild-adduser "$USER"
       - name: Generate debian/changelog
-        run: ./gen-changelog -i 2026-01-04 -p 0wm-server > debian/changelog
+        run: ./gen-changelog -d debian/${{ matrix.target.suite }} -i 2026-01-04 -p 0wm-server > debian/changelog
       - name: Build package
-        run: gbp buildpackage --verbose
+        run: gbp buildpackage -d ${{ matrix.target.suite }} -v
       - name: Cleanup build directory
         run: rm -f build/*.build{,info}
       - name: Look for artifacts
@@ -41,22 +54,7 @@ jobs:
         if: steps.artifacts.outputs.upload == 'true'
         uses: actions/upload-artifact@v6
         with:
-          name: build-${{ github.run_id }}
+          name: nightly-${{ matrix.target.distribution }}-${{ matrix.target.suite }}-${{ matrix.arch.name }}
           path: build
           if-no-files-found: ignore
-          retention-days: 14
-      - name: Prepare Pages artifacts
-        if: steps.artifacts.outputs.upload == 'true'
-        run: |
-          set -euxo pipefail
-          for file in build/*; do
-            ln -s "$(basename "$file")" "$(perl -pe 's/_0[^_.]*/_nightly/' <<< "$file")"
-          done
-      - name: Publish to GitHub Pages
-        if: steps.artifacts.outputs.upload == 'true'
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: build
-          destination_dir: debian/trixie
-          keep_files: true
+          retention-days: 7
