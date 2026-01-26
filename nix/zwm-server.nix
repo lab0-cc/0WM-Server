@@ -12,12 +12,13 @@ lib.makeExtensible (self: {
       doNixSupport = false;
 
       postBuild = ''
-        dune build src/zwm.exe
+        dune build
       '';
 
       postInstall = ''
         mkdir -p $out/bin
-        cp -r _build/default/src/zwm.exe $out/bin/0wm-server
+        cp -r _build/default/src/zwm.exe $out/bin/0wm
+        cp -r _build/default/src/zwmd.exe $out/bin/0wmd
       '';
     });
   };

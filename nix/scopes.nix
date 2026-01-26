@@ -3,7 +3,8 @@
   buildOpamProject',
   opam-repository,
 
-  gendarme,
+  dream,
+  irmin,
   query,
   src,
   zwm-server,
@@ -13,7 +14,8 @@ lib.makeExtensible (self: {
   default = buildOpamProject' {
     repos = [
       opam-repository
-      gendarme.repo
+      dream.repo
+      irmin.repo
     ];
     resolveArgs.with-test = true;
   } src query;

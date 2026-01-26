@@ -42,7 +42,7 @@
           }
         );
 
-        lib = pkgs.lib;
+        inherit (pkgs) lib;
 
         devPackagesQuery = {
           ## You can add "development" packages here.
@@ -63,8 +63,9 @@
         };
 
         scopes = pkgs.callPackage ./nix/scopes.nix {
-          gendarme = pkgs.callPackage ./nix/gendarme.nix { };
-          query = query;
+          dream = pkgs.callPackage ./nix/dream.nix { };
+          irmin = pkgs.callPackage ./nix/irmin.nix { };
+          inherit query;
           src = lib.cleanSource ./.;
           zwm-server = pkgs.callPackage ./nix/zwm-server.nix { };
         };
