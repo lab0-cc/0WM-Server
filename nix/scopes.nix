@@ -24,16 +24,4 @@ lib.makeExtensible (self: {
 
   # Override the main package inside the scope.
   main = self.default.overrideScope zwm-server.overlay;
-
-  # WIP:
-  # https://ocaml.org/manual/5.4/flambda.html
-  main-optimized = self.main.overrideScope (
-    final: prev: {
-      nixpkgs = prev.nixpkgs.extend (
-        final: prev: { ocaml = prev.ocaml.override { flambdaSupport = true; }; }
-      );
-      dune = prev.dune.override { inherit (final.nixpkgs) ocaml; };
-      inherit (final.nixpkgs) ocaml;
-    }
-  );
 })

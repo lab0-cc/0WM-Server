@@ -73,7 +73,6 @@
 
         # The main package containing the executable
         package = scopes.main."0wm-server";
-        package-optimized = scopes.main-optimized."0wm-server";
 
         # Packages from devPackagesQuery
         devPackages = lib.attrValues (lib.getAttrs (lib.attrNames devPackagesQuery) scopes.main);
@@ -83,10 +82,6 @@
 
         # nix build .#default -L
         packages.default = package;
-
-        # WIP:
-        # nix build .#optimized -L
-        packages.optimized = package-optimized;
 
         # nix develop
         devShells.default = pkgs.mkShell {
