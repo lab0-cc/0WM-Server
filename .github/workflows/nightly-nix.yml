@@ -1,0 +1,23 @@
+name: Nightly Nix testing
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+jobs:
+  test-nix:
+    name: Test for ${{ matrix.arch.name }} (${{ matrix.arch.os }})
+    runs-on: ${{ matrix.arch.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - { name: amd64-linux, os: ubuntu-latest }
+          - { name: arm64-linux, os: ubuntu-24.04-arm }
+          - { name: arm64-darwin, os: macos-latest }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+      - name: Build 0WM
+        run: nix build
