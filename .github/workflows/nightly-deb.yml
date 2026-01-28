@@ -4,6 +4,17 @@ on:
     - cron: "0 2 * * *"
   workflow_dispatch:
 jobs:
+  pre:
+    name: Check if the jobs need to be run
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          paths_ignore: '[".github/**"]'
+          do_not_skip: '["workflow_dispatch"]'
   package-deb:
     name: Package for ${{ matrix.target.distribution }}/${{ matrix.target.suite }} (${{ matrix.arch.os }})
     runs-on: ${{ matrix.arch.os }}
@@ -19,6 +30,8 @@ jobs:
           - { distribution: debian, suite: forky }
           - { distribution: ubuntu, suite: jammy }
           - { distribution: ubuntu, suite: noble }
+    needs: pre
+    if: needs.pre.outputs.should_skip != 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v6

@@ -4,6 +4,17 @@ on:
     - cron: "0 3 * * *"
   workflow_dispatch:
 jobs:
+  pre:
+    name: Check if the jobs need to be run
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          paths_ignore: '[".github/**"]'
+          do_not_skip: '["workflow_dispatch"]'
   test-nix:
     name: Test for ${{ matrix.arch.name }} (${{ matrix.arch.os }})
     runs-on: ${{ matrix.arch.os }}
@@ -14,6 +25,8 @@ jobs:
           - { name: amd64-linux, os: ubuntu-latest }
           - { name: arm64-linux, os: ubuntu-24.04-arm }
           - { name: arm64-darwin, os: macos-latest }
+    needs: pre
+    if: needs.pre.outputs.should_skip != 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v6
