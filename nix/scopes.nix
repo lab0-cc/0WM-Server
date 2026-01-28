@@ -3,6 +3,7 @@
   buildOpamProject',
   opam-repository,
 
+  cf,
   dream,
   irmin,
   query,
@@ -14,6 +15,7 @@ lib.makeExtensible (self: {
   default = buildOpamProject' {
     repos = [
       opam-repository
+      cf.repo
       dream.repo
       irmin.repo
     ];

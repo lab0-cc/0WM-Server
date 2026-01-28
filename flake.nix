@@ -63,6 +63,7 @@
         };
 
         scopes = pkgs.callPackage ./nix/scopes.nix {
+          cf = pkgs.callPackage ./nix/cf.nix { };
           dream = pkgs.callPackage ./nix/dream.nix { };
           irmin = pkgs.callPackage ./nix/irmin.nix { };
           inherit query;
