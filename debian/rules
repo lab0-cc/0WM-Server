@@ -14,11 +14,9 @@ OCAML_OPTIONS ?= ocaml-option-flambda
 # Dune options
 DUNE_PROFILE  := release
 
-# Pins
-## Irmin has unreleased changes that we are using
+# Irmin and Dream have unreleased changes that we are using
 IRMIN_PIN := git+https://github.com/mirage/irmin#7a09a06fff67bc4981faca36a332c51fc16e819e
-## We bumped one of Dream’s dependencies to fix critical bugs, but it hasn’t been merged upstream
-DREAM_PIN := git+https://github.com/bensmrs/dream#5126308698188454ad89fc1e6e6e5269da7845ae
+DREAM_PIN := git+https://github.com/camlworks/dream.git#d076a45d8285452d898395f69c4c78cf0dcfb8f0
 
 OPAM := HOME=$(OPAMHOME) OPAMROOT=$(OPAMROOT) OPAMCONFIRMLEVEL=unsafe-yes opam
 
