@@ -14,15 +14,6 @@ let rebuild_rtree store =
   let* objects = Runtime.Store.list main ["objects"] in
   Lwt_list.iter_s (fun (o, _) -> Api.push_to_rtree o) objects
 
-(* This function is to be removed when https://github.com/camlworks/dream/pull/407 is merged
-   upstream *)
-let cleanup_socket () = match%lwt Lwt_unix.stat Runtime.socket with
-  | exception Unix.Unix_error (ENOENT, _, _) -> Lwt.return_unit
-  | { Unix.st_kind = S_SOCK; _ } ->
-      Log.info (fun m -> m "Removing previous socket");
-      Lwt_unix.unlink Runtime.socket
-  | _ -> Lwt.return_unit
-
 let rebuild_config store = match%lwt Zwmlib.Store.get_conf store with
   | exception _ ->
       Log.info (fun m -> m "Rebuilding configuration");
@@ -61,7 +52,6 @@ let init =
   let* () = cleanup_open_sessions Runtime.store branches in
   let* () = rebuild_rtree store in
   let* () = init_data_dir () in
-  let* () = cleanup_socket () in
   let* () = rebuild_config Runtime.store in
   Log.info (fun m -> m "Initialization completed");
   Lwt.join [Web.server ~error_handler store; Monitor.server ~error_handler]
