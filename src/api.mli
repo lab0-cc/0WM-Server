@@ -15,7 +15,10 @@ val get_heatmap : ssids:string list -> string -> Dream.response Lwt.t
 (** Get a list of maps around the given position with the given accuracy *)
 val get_maps : ?latitude:float -> ?longitude:float -> ?altitude:float -> ?accuracy:float
                                -> ?altitude_accuracy:float -> ?limit:int -> bool -> unit
-                               -> Dream.response Dream.promise
+                               -> Dream.response Lwt.t
+
+(** Get the bounding box containing all saved floorplans *)
+val get_maps_box : unit -> Dream.response Lwt.t
 
 (** Add a map to the store *)
 val push_map : Types.payload -> Dream.response Lwt.t

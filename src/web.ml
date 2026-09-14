@@ -47,8 +47,10 @@ let rec server ~error_handler store =
       [%decode.Json] ~v Types.payload |> Api.push_map
     );
     Dream.options "/maps" (fun _ -> Dream.respond ~headers:[("Access-Control-Allow-Origin", "*"); ("Access-Control-Allow-Headers", "*")] ~status:`No_Content "");
+    Dream.get "/maps/box" (fun _ -> Api.get_maps_box ());
     Dream.get "/maps/:id" (fun request -> Dream.param request "id" |> Api.get_map);
     Dream.delete "/maps/:id" (fun request -> Dream.param request "id" |> Api.delete_map);
+    Dream.options "/maps/:id" (fun _ -> Dream.respond ~headers:[("Access-Control-Allow-Origin", "*"); ("Access-Control-Allow-Headers", "*"); ("Access-Control-Allow-Methods", "GET,DELETE")] ~status:`No_Content "");
     Dream.get "/data/**" (Runtime.var "data" |> Dream.static);
     Dream.get "/heatmaps/:id" (fun request ->
       let ssids = Dream.queries request "ssid" in

@@ -150,3 +150,9 @@ let push_map { anchors = (a, a', a'' as anchors); structure; walls;
                                   Runtime.store) in
   let* () = push_to_rtree id in
   U.ok ()
+
+let get_maps_box () = match !Runtime.rtree with
+  | None -> U.json "null"
+  | Some r ->
+      let%lwt v = Rtree.geo_of Runtime.store r >|= Geo.bounding_box in
+      [%encode.Json] ~v Geo.box |> U.json

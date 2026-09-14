@@ -148,6 +148,19 @@ paths:
           description: Successful operation
         '404':
           description: Floorplan not found
+  /maps/box:
+    get:
+      tags:
+        - maps
+      summary: Get the bounding box containing all saved floorplans
+      description: Returns the smallest bounding box containing all the floorplans tracked by 0WM
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoundingBox'
   /data/{file}:
     get:
       tags:
@@ -306,6 +319,26 @@ components:
         - y
         - lng
         - lat
+    MapPoint:
+      type: object
+      properties:
+        lng:
+          $ref: '#/components/schemas/Longitude'
+        lat:
+          $ref: '#/components/schemas/Latitude'
+      required:
+        - lng
+        - lat
+    BoundingBox:
+      type: object
+      properties:
+        sw:
+          $ref: '#/components/schemas/MapPoint'
+        ne:
+          $ref: '#/components/schemas/MapPoint'
+      required:
+        - sw
+        - ne
     Point:
       type: object
       properties:
