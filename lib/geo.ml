@@ -1,18 +1,23 @@
 open Linalg
-[%%marshal.load Json]
 
-type point = { lat : float [@json]; long : float [@json] } [@@marshal]
-type box = { sw : point [@json]; ne : point [@json] } [@@marshal]
+type point = { local_x : float option [@json "x"; omit_default];
+               local_y : float option [@json "y"; omit_default];
+               lat : float [@json]; long : float [@json "lng"] } [@@marshal]
+type box = { sw : point; ne : point } [@@marshal { tag = json }]
 type obj = Bounding_box of box | Polygon of point list | Multi_polygon of point list list
 [@@marshal]
 
-let ll_of_xy { p_x; p_y } = { long = p_x; lat = p_y }
+let ll ?local long lat = match local with
+  | Some { p_x; p_y } -> { local_x = Some p_x; local_y = Some p_y; long; lat }
+  | None -> { local_x = None; local_y = None; long; lat }
 
-let xy_of_ll { long; lat } = { p_x = long; p_y = lat }
+let ll_of_xy ?local { p_x; p_y } = ll ?local p_x p_y
+
+let xy_of_ll { long; lat; _ } = { p_x = long; p_y = lat }
 
 let average_earth_radius = 6_371_008.771
 
-let distance { lat; long } { lat = lat'; long = long' } =
+let distance { lat; long; _ } { lat = lat'; long = long'; _ } =
   let rad x = x *. Float.pi /. 180. in
   2. *. average_earth_radius
      *. asin (sqrt ((1. -. cos(lat'-.lat |> rad)
@@ -26,17 +31,15 @@ let rec bounding_box = function
   | Polygon [] -> invalid_arg "bounding_box"
   | Polygon (hd::tl) ->
       let rec bb_rec' sw ne = function
-        | { lat; long }::tl when long < 0. ->
-            bb_rec' { sw with lat = min sw.lat lat }
-                    { lat = max ne.lat lat; long = max ne.long long } tl
-        | { lat; long }::tl ->
-            bb_rec' { lat = min sw.lat lat; long = min sw.long long }
-                    { ne with lat = max ne.lat lat } tl
+        | { lat; long; _ }::tl when long < 0. ->
+            bb_rec' (ll sw.long (min sw.lat lat)) (ll (max ne.long long) (max ne.lat lat)) tl
+        | { lat; long; _ }::tl ->
+            bb_rec' (ll (min sw.long long) (min sw.lat lat)) (ll ne.long (max ne.lat lat)) tl
         | [] -> { sw; ne } in
       let rec bb_rec sw ne = function
         | { long; _ }::_ as l when Float.abs (long -. sw.long) > 180. -> bb_rec' sw ne l
-        | { lat; long }::tl -> bb_rec { lat = min sw.lat lat; long = min sw.long long}
-                                      { lat = max ne.lat lat; long = max ne.long long} tl
+        | { lat; long; _ }::tl -> bb_rec (ll (min sw.long long) (min sw.lat lat))
+                                         (ll (max ne.long long) (max ne.lat lat)) tl
         | [] -> { sw; ne } in
       bb_rec hd hd tl
   | Multi_polygon [] -> invalid_arg "bounding_box"
@@ -46,12 +49,12 @@ let rec bounding_box = function
 
 and merge_pure_bounding_boxes bb bb' = match (bb, bb') with
   | ({ sw; ne } as bb), ({ sw = sw'; ne = ne' } as bb') when is_degenerate bb = is_degenerate bb' ->
-      { sw = { lat = min sw.lat sw'.lat; long = min sw.long sw'.long };
-        ne = { lat = max ne.lat ne'.lat; long = max ne.long ne'.long } }
+      { sw = ll (min sw.long sw'.long) (min sw.lat sw'.lat);
+        ne = ll (max ne.long ne'.long) (max ne.lat ne'.lat) }
   | ({ sw; ne } as bb), { sw = sw'; _ } when is_degenerate bb && sw'.long > 0. ->
-      { sw = { lat = min sw.lat sw'.lat; long = min sw.long sw'.long }; ne }
+      { sw = ll (min sw.long sw'.long) (min sw.lat sw'.lat); ne }
   | ({ sw; ne } as bb), { ne = ne'; _ } when is_degenerate bb ->
-      { sw; ne = { lat = max ne.lat ne'.lat; long = max ne.long ne'.long } }
+      { sw; ne = ll (max ne.long ne'.long) (max ne.lat ne'.lat) }
   | bb, bb' -> merge_pure_bounding_boxes bb' bb
 
 let merge_bounding_boxes l =
@@ -72,7 +75,7 @@ let rec obj_distance p = function
         if is_degenerate bb
         then if p.long > 0. then max p.long sw.long else min p.long ne.long
         else max p.long sw.long |> min ne.long in
-      distance p { lat; long }
+      ll long lat |> distance p
   | Polygon l ->
       let l = normalize l in
       let p_xy = xy_of_ll p in

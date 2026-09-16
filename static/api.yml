@@ -102,7 +102,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MapDataEntryRequest'
+              $ref: '#/components/schemas/MapDataEntryPost'
         required: true
       responses:
         '200':
@@ -110,6 +110,23 @@ paths:
         '400':
           description: Invalid arguments
   /maps/{id}:
+    delete:
+      tags:
+        - maps
+      summary: Delete a floorplan by ID
+      description: Deletes the floorplan with the given ID.
+      parameters:
+        - name: id
+          in: path
+          description: ID of the floorplan to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '404':
+          description: Floorplan not found
     get:
       tags:
         - maps
@@ -131,18 +148,25 @@ paths:
                 $ref: '#/components/schemas/MapDataEntry'
         '404':
           description: Floorplan not found
-    delete:
+    put:
       tags:
         - maps
-      summary: Delete a floorplan by ID
-      description: Deletes the floorplan with the given ID.
+      summary: Update a floorplan by ID
+      description: Updates the floorplan with the given ID.
       parameters:
         - name: id
           in: path
-          description: ID of the floorplan to delete
+          description: ID of the floorplan to update
           required: true
           schema:
             type: string
+      requestBody:
+        description: Update a floorplan entry.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MapDataEntryPut'
+        required: true
       responses:
         '200':
           description: Successful operation
@@ -414,7 +438,7 @@ components:
         - height
         - width
         - data
-    MapDataEntryRequest:
+    MapDataEntryPost:
       type: object
       properties:
         zmin:
@@ -450,6 +474,43 @@ components:
         - zmin
         - zmax
         - floorplan
+        - anchors
+        - structure
+        - walls
+        - name
+    MapDataEntryPut:
+      type: object
+      properties:
+        zmin:
+          type: number
+        zmax:
+          type: number
+        anchors:
+          type: array
+          items:
+            $ref: '#/components/schemas/MapAnchor'
+          minLength: 3
+          maxLength: 3
+        structure:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/Point'
+            minLength: 3
+        walls:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/Point'
+            minLength: 2
+            maxLength: 2
+        name:
+          type: string
+      required:
+        - zmin
+        - zmax
         - anchors
         - structure
         - walls

@@ -1,5 +1,3 @@
-[%%marshal.load Ezjsonm]
-
 open Lwt.Syntax
 module Backend = Irmin_git_unix.FS.KV (Irmin.Contents.Json_value)
 module Proj = Irmin.Json_tree (Backend)

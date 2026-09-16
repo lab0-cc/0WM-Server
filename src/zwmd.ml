@@ -12,7 +12,7 @@ let rebuild_rtree store =
   Log.info (fun m -> m "Rebuilding R-tree");
   let* main = Runtime.Store.main store in
   let* objects = Runtime.Store.list main ["objects"] in
-  Lwt_list.iter_s (fun (o, _) -> Api.push_to_rtree o) objects
+  Lwt_list.iter_s (fun (o, _) -> Runtime.rtree_push o) objects
 
 let rebuild_config store = match%lwt Zwmlib.Store.get_conf store with
   | exception _ ->

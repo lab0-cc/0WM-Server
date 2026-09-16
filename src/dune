@@ -1,7 +1,7 @@
 (executable
   (name zwmd)
   (libraries dream irmin-git.unix uuidm zwmlib)
-  (modules api monitor runtime types util web ws zwmd)
+  (modules api api_debug api_heatmaps api_maps cors monitor runtime types util web web_static ws zwmd)
   (preprocess (pps lwt_ppx ppx_marshal)))
 
 (executable

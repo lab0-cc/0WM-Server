@@ -26,8 +26,8 @@ let anchor_structure_at long lat =
   let open Zwmlib.Geo in
   let anchors = (anchor 0. 0. long lat, anchor 1. 0. (long +. 1.) lat,
                  anchor 0. 1. long (lat +. 1.)) in
-  (anchors, Polygon [{ long; lat }; { long = long +. 1.; lat };
-                     { long = long +. 1.; lat = lat +. 1. }; { long; lat = lat +. 1. }])
+  (anchors, Polygon [ll long lat; ll (long +. 1.) lat; ll (long +. 1.) (lat +. 1.);
+                     ll long (lat +. 1.)])
 
 (** Test for {!Zwmlib.Rtree} *)
 let test_rtree switch () =
@@ -43,35 +43,35 @@ let test_rtree switch () =
 
   let (anchor, structure) = anchor_structure_at 2. 0. in
   let* tree = push ~tree "b" anchor structure s in
-  let bb = [%decode.Json] ~v:{|{"sw":{"lat":0,"long":0},"ne":{"lat":1,"long":3}}|} Zwmlib.Geo.box in
+  let bb = [%decode.Json] ~v:{|{"sw":{"lat":0,"lng":0},"ne":{"lat":1,"lng":3}}|} Zwmlib.Geo.box in
   let* structure = geo_of s tree in
   check bool "geo_of" true (structure = Zwmlib.Geo.Bounding_box bb);
   to_list tree |> List.sort String.compare |> check (list string) "to_list" ["a"; "b"];
-  let* distances = sort { long = 0.5; lat = 0.25 } tree s in
+  let* distances = sort (Zwmlib.Geo.ll 0.5 0.25) tree s in
   let dists = [(0., "a"); (166791.032, "b")] in
   check (list (pair Util.f3 string)) "sort" dists distances;
 
   let (anchor, structure) = anchor_structure_at 0. 2. in
   let* tree = push ~tree "c" anchor structure s in
-  let bb = [%decode.Json] ~v:{|{"sw":{"lat":0,"long":0},"ne":{"lat":3,"long":3}}|} Zwmlib.Geo.box in
+  let bb = [%decode.Json] ~v:{|{"sw":{"lat":0,"lng":0},"ne":{"lat":3,"lng":3}}|} Zwmlib.Geo.box in
   let* structure = geo_of s tree in
   check bool "geo_of" true (structure = Zwmlib.Geo.Bounding_box bb);
   to_list tree |> List.sort String.compare |> check (list string) "to_list" ["a"; "b"; "c"];
-  let* distances = sort ~limit:2 { long = 0.5; lat = 0.25 } tree s in
+  let* distances = sort ~limit:2 (Zwmlib.Geo.ll 0.5 0.25) tree s in
   check (list (pair Util.f3 string)) "sort" dists distances;
-  let* distances = sort { long = 0.5; lat = 0.25 } tree s in
+  let* distances = sort (Zwmlib.Geo.ll 0.5 0.25) tree s in
   check (list (pair Util.f3 string)) "sort" [(0., "a"); (166791.032, "b"); (194591.390, "c")]
         distances;
 
   let (anchor, structure) = anchor_structure_at 4. 2. in
   let* tree = push ~tree "d" anchor structure s in
-  let bb = [%decode.Json] ~v:{|{"sw":{"lat":0,"long":0},"ne":{"lat":3,"long":5}}|} Zwmlib.Geo.box in
+  let bb = [%decode.Json] ~v:{|{"sw":{"lat":0,"lng":0},"ne":{"lat":3,"lng":5}}|} Zwmlib.Geo.box in
   let* structure = geo_of s tree in
   check bool "geo_of" true (structure = Zwmlib.Geo.Bounding_box bb);
   to_list tree |> List.sort String.compare |> check (list string) "to_list" ["a"; "b"; "c"; "d"];
-  let* distances = sort ~limit:2 { long = 0.5; lat = 0.25 } tree s in
+  let* distances = sort ~limit:2 (Zwmlib.Geo.ll 0.5 0.25) tree s in
   check (list (pair Util.f3 string)) "sort" dists distances;
-  let* distances = sort { long = 0.5; lat = 0.25 } tree s in
+  let* distances = sort (Zwmlib.Geo.ll 0.5 0.25) tree s in
   let dists' = [(0., "a"); (166791.032, "b"); (194591.390, "c"); (435038.912, "d")] in
   check (list (pair Util.f3 string)) "sort" dists' distances;
 
@@ -79,14 +79,14 @@ let test_rtree switch () =
   let* tree = push ~tree "e" anchor structure s in
   let (anchor, structure) = anchor_structure_at 6. 0. in
   let* tree = push ~tree "f" anchor structure s in
-  let bb = [%decode.Json] ~v:{|{"sw":{"lat":0,"long":0},"ne":{"lat":6,"long":7}}|} Zwmlib.Geo.box in
+  let bb = [%decode.Json] ~v:{|{"sw":{"lat":0,"lng":0},"ne":{"lat":6,"lng":7}}|} Zwmlib.Geo.box in
   let* structure = geo_of s tree in
   check bool "geo_of" true (structure = Zwmlib.Geo.Bounding_box bb);
   to_list tree |> List.sort String.compare
   |> check (list string) "to_list" ["a"; "b"; "c"; "d"; "e"; "f"];
-  let* distances = sort ~limit:2 { long = 0.5; lat = 0.25 } tree s in
+  let* distances = sort ~limit:2 (Zwmlib.Geo.ll 0.5 0.25) tree s in
   check (list (pair Util.f3 string)) "sort" dists distances;
-  let* distances = sort ~limit:4 { long = 0.5; lat = 0.25 } tree s in
+  let* distances = sort ~limit:4 (Zwmlib.Geo.ll 0.5 0.25) tree s in
   check (list (pair Util.f3 string)) "sort" dists' distances;
 
   let* tree = drop ~tree "a" s in
@@ -94,11 +94,11 @@ let test_rtree switch () =
   |> check (list string) "to_list" ["b"; "c"; "d"; "e"; "f"];
 
   let* tree = drop ~tree "d" s in
-  let bb = [%decode.Json] ~v:{|{"sw":{"lat":0,"long":0},"ne":{"lat":6,"long":7}}|} Zwmlib.Geo.box in
+  let bb = [%decode.Json] ~v:{|{"sw":{"lat":0,"lng":0},"ne":{"lat":6,"lng":7}}|} Zwmlib.Geo.box in
   let* structure = geo_of s tree in
   check bool "geo_of" true (structure = Zwmlib.Geo.Bounding_box bb);
   to_list tree |> List.sort String.compare |> check (list string) "to_list" ["b"; "c"; "e"; "f"];
-  let* distances = sort { long = 0.5; lat = 0.25 } tree s in
+  let* distances = sort (Zwmlib.Geo.ll 0.5 0.25) tree s in
   check (list (pair Util.f3 string)) "sort"
         [(166791.032, "b"); (194591.390, "c"); (528176.629, "e"); (611567.112, "f")] distances;
 
@@ -106,8 +106,7 @@ let test_rtree switch () =
   let* tree = drop ~tree "c" s in
   let* tree = drop ~tree "e" s in
   let* structure = geo_of s tree in
-  let structure' = Zwmlib.Geo.Polygon [{ long = 6.; lat = 0. }; { long = 7.; lat = 0. };
-                                       { long = 7.; lat = 1. }; { long = 6.; lat = 1. }] in
+  let structure' = Zwmlib.Geo.(Polygon [ll 6. 0.; ll 7. 0.; ll 7. 1.; ll 6. 1.]) in
   check bool "geo_of" true (structure = structure');
   to_list tree |> List.sort String.compare |> check (list string) "to_list" ["f"];
 

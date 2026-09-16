@@ -20,3 +20,12 @@ val store : Store.Repo.t option ref
 
 (** Dynamic R-tree *)
 val rtree : Zwmlib.Rtree.t option ref
+
+(** R-tree mutex *)
+val rtree_mutex : Mutex.t
+
+(** Push an object to the R-tree *)
+val rtree_push : string -> unit Lwt.t
+
+(** Reinsert an object into the R-tree *)
+val rtree_reinsert : string -> unit Lwt.t

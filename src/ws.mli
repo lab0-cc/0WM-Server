@@ -5,3 +5,6 @@ type context
 
 (** The dance entrypoint *)
 val live : ?context:context -> Dream.websocket -> unit Lwt.t
+
+(** The API endpoints *)
+val endpoints : Dream.route list

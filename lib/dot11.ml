@@ -1,5 +1,3 @@
-[%%marshal.load Json]
-
 type ht_width = HT_20 | HT_any [@@marshal]
 type ht_off = HT_SCN | HT_SCA | HT_SCX | HT_SCB [@@marshal]
 type ht_op = {

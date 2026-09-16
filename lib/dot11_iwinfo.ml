@@ -1,5 +1,3 @@
-[%%marshal.load Json]
-
 open Dot11
 
 type mode =

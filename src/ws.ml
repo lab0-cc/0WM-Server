@@ -52,7 +52,7 @@ let rqht ({ uuid; _ } as context) = match uuid with
   | None -> failwith "No UUID"
   | Some uuid ->
       let* { ssids; _ } = Store.get_conf Runtime.store in
-      let* v = Api.get_heatmap_s ~ssids uuid in
+      let* v = Api_heatmaps.get_heatmap_s ~ssids uuid in
       Lwt.return ("HEAT\000" ^ [%encode.Json] ~v Gendarme.(pair string Linalg.Box2.t), context)
 
 let rec live ?(context=empty_context) ws = match%lwt Dream.receive ws with
@@ -77,3 +77,5 @@ let rec live ?(context=empty_context) ws = match%lwt Dream.receive ws with
         | { uuid = Some uuid; _ } -> Store.end_scan uuid Runtime.store
         | _ -> Lwt.return_unit in
       Dream.close_websocket ws
+
+let endpoints = [Dream.get "/ws" (fun _ -> Dream.websocket live)]

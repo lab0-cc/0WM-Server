@@ -1,5 +1,3 @@
-[%%marshal.load Json]
-
 type t = {
   a_x : float [@json "x"];
   a_y : float [@json "y"];

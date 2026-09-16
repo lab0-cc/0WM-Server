@@ -1,5 +1,3 @@
-[%%marshal.load Json]
-
 (** The type of 2D points *)
 type point = { p_x : float [@json "x"]; p_y : float [@json "y"] } [@@marshal]
 

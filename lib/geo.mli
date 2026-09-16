@@ -1,7 +1,8 @@
 (** This module implements geo shapes *)
 
 (** The type of longitude/latitude points *)
-type point = { lat : float; long : float } [@@marshal]
+type point = { local_x : float option; local_y : float option; lat : float; long : float }
+[@@marshal]
 
 (** The type of bounding boxes *)
 type box [@@marshal]
@@ -10,8 +11,11 @@ type box [@@marshal]
 type obj = Bounding_box of box | Polygon of point list | Multi_polygon of point list list
 [@@marshal]
 
+(** Construct a point *)
+val ll : ?local:Linalg.point -> float -> float -> point
+
 (** Convert an x/y point to a longitude/latitude one *)
-val ll_of_xy : Linalg.point -> point
+val ll_of_xy : ?local:Linalg.point -> Linalg.point -> point
 
 (** Convert a longitude/latitude point to an x/y one *)
 val xy_of_ll : point -> Linalg.point
