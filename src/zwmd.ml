@@ -44,6 +44,9 @@ let error_handler (Dream.{ condition; will_send_response; _ } as e) = match cond
       Dream.respond ~status:`Not_Found "Not found" >|= Option.some
   | _ -> Dream.debug_error_handler e
 
+let stop, resolver = Lwt.wait ()
+let quit _ = Lwt.wakeup_later resolver ()
+
 let init =
   Dream.initialize_log ();
   let* store = Runtime.(Store.Repo.v config) in
@@ -54,6 +57,13 @@ let init =
   let* () = init_data_dir () in
   let* () = rebuild_config Runtime.store in
   Log.info (fun m -> m "Initialization completed");
-  Lwt.join [Web.server ~error_handler store; Monitor.server ~error_handler]
+  if Sys.unix
+  then begin
+    Lwt_unix.on_signal Sys.sigint quit |> ignore;
+    Lwt_unix.on_signal Sys.sigterm quit |> ignore
+  end;
+  Lwt.join [Web.server ~error_handler store; Monitor.server ~error_handler ~stop]
 
-let () = Lwt_main.run init
+let () =
+  if Sys.unix then Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
+  Lwt_main.run init

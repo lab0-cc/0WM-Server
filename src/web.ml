@@ -11,6 +11,11 @@ let rec server ~error_handler store =
   @@ Dream.logger
   @@ Dream.router (Api_maps.endpoints @ Api_heatmaps.endpoints @ Api_debug.endpoints store
                                       @ Web_static.endpoints @ Ws.endpoints) in
-  signal := None;
-  Dream.info (fun m -> m "Restarting web server");
-  server ~error_handler store
+  match !signal with
+  | Some _ ->
+      signal := None;
+      Dream.info (fun m -> m "Restarting web server");
+      server ~error_handler store
+  | None ->
+      Dream.info (fun m -> m "Web server shutdown requested by the monitor");
+      Lwt.return_unit
