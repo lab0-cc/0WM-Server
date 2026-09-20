@@ -23,11 +23,32 @@ let init_data_dir () =
         Log.info (fun m -> m "Creating data directory");
         Lwt_unix.mkdir path 0o750
 
-let rebuild_config store = match%lwt Zwmlib.Store.get_conf store with
-  | exception _ ->
-      Log.info (fun m -> m "Rebuilding configuration");
-      Zwmlib.Store.set_conf (Gendarme.default Zwmlib.Types.config ()) store
-  | _ -> Lwt.return_unit
+let rebuild_config store =
+  let%lwt current = match%lwt Zwmlib.Store.get_conf store with
+    | exception _ ->
+        Log.info (fun m -> m "Rebuilding configuration");
+        let config = Gendarme.default Zwmlib.Types.config () in
+        let%lwt () = Zwmlib.Store.set_conf config store in
+        Lwt.return config
+    | config -> Lwt.return config in
+  let spool = match Sys.getenv_opt "ZWM_SPOOL" with
+    | Some dir -> dir
+    | None -> "/var/spool/0wm" in
+  let config_file = Filename.concat spool "config" in
+  try
+    let ic = open_in config_file in
+    let len = in_channel_length ic in
+    let v = really_input_string ic len in
+    close_in ic;
+    Sys.remove config_file;
+    let conf = [%decode.Json] ~v Zwmapi.Types.config_patch in
+    Zwmlib.Store.set_conf {
+      interface = Option.value ~default:current.interface conf.interface;
+      port = Option.value ~default:current.port conf.port;
+      aps = Option.value ~default:current.aps conf.aps;
+      ssids = Option.value ~default:current.ssids conf.ssids;
+    } store
+  with _ -> Lwt.return_unit
 
 let notify_systemd () = match Sys.getenv_opt "NOTIFY_SOCKET" with
   | None -> ()
