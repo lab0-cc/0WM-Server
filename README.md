@@ -49,9 +49,11 @@ In the rest of this README, we refer to `0wm` and `0wmd` binaries; when building
 opam init --compiler=ocaml-option-flambda --shell-setup
 eval $(opam env)
 
-# 2. Pin development dependencies (Irmin and Dream)
-opam pin add --no-action --yes git+https://github.com/mirage/irmin
-opam pin add --no-action --yes git+https://github.com/camlworks/dream
+# 2. Pin development dependencies
+opam pin add --no-action --yes git+https://github.com/bensmrs/gluten.git#668d961cf6edafecfd130b9b6b0ab01c3d2a4242
+opam pin add --no-action --yes git+https://github.com/camlworks/dream.git#4718cb47264178d6d2181e0fcc2e8a8ff2170b5a
+opam pin add --no-action --yes git+https://github.com/mirage/irmin.git#7a09a06fff67bc4981faca36a332c51fc16e819e
+opam pin add --no-action --yes git+https://gitlab.com/camlspotter/camlimages.git#ef4caba407b738e98763001a4c85b3a5db19a739
 
 # 3. Clone and install dependencies
 git clone https://github.com/lab0-cc/0WM-Server.git
