@@ -4,7 +4,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-Type=simple
+Type=notify
 ExecStart=/usr/libexec/0wm/0wmd
 Environment=ZWM_SHARE=/usr/share/0wm
 Restart=on-failure
