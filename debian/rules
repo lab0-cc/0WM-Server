@@ -14,9 +14,13 @@ OCAML_OPTIONS ?= ocaml-option-flambda
 # Dune options
 DUNE_PROFILE  := release
 
-# Irmin and Dream have unreleased changes that we are using
-IRMIN_PIN := git+https://github.com/mirage/irmin#7a09a06fff67bc4981faca36a332c51fc16e819e
-DREAM_PIN := git+https://github.com/camlworks/dream.git#d076a45d8285452d898395f69c4c78cf0dcfb8f0
+# Camlimages, Dream and Irmin have unreleased changes that we are using
+CAMLIMAGES_PIN := git+https://gitlab.com/camlspotter/camlimages.git#ef4caba407b738e98763001a4c85b3a5db19a739
+DREAM_PIN := git+https://github.com/camlworks/dream.git#4718cb47264178d6d2181e0fcc2e8a8ff2170b5a
+IRMIN_PIN := git+https://github.com/mirage/irmin.git#7a09a06fff67bc4981faca36a332c51fc16e819e
+
+# Gluten has been patched to solve a critical issue
+GLUTEN_PIN := git+https://github.com/bensmrs/gluten.git#668d961cf6edafecfd130b9b6b0ab01c3d2a4242
 
 OPAM := HOME=$(OPAMHOME) OPAMROOT=$(OPAMROOT) OPAMCONFIRMLEVEL=unsafe-yes opam
 
@@ -32,8 +36,10 @@ override_dh_auto_configure:
 	$(OPAM) switch create --yes $(OPAMSWITCHDIR) $(OCAML_VARIANT) $(OCAML_OPTIONS)
 
 	# Add pins
-	$(OPAM) pin add --switch $(OPAMSWITCHDIR) --no-action $(IRMIN_PIN)
+	$(OPAM) pin add --switch $(OPAMSWITCHDIR) --no-action $(CAMLIMAGES_PIN)
 	$(OPAM) pin add --switch $(OPAMSWITCHDIR) --no-action $(DREAM_PIN)
+	$(OPAM) pin add --switch $(OPAMSWITCHDIR) --no-action $(GLUTEN_PIN)
+	$(OPAM) pin add --switch $(OPAMSWITCHDIR) --no-action $(IRMIN_PIN)
 
 	# Install build deps for this project
 	$(OPAM) install --switch $(OPAMSWITCHDIR) --deps-only --with-test .

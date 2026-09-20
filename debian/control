@@ -7,12 +7,15 @@ Build-Depends:
  debhelper-compat (= 13),
  ca-certificates,
  git,
- opam,
- pkgconf,
- libssl-dev,
- libgmp-dev,
  libev-dev,
- libffi-dev
+ libffi-dev,
+ libgmp-dev,
+ libjpeg-dev,
+ libpng-dev,
+ libssl-dev,
+ libwebp-dev,
+ opam,
+ pkgconf
 Standards-Version: 4.7.2
 Homepage: https://0wm.lab0.cc
 
