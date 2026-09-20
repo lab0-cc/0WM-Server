@@ -14,12 +14,6 @@ let rebuild_rtree store =
   let* objects = Runtime.Store.list main ["objects"] in
   Lwt_list.iter_s (fun (o, _) -> Runtime.rtree_push o) objects
 
-let rebuild_config store = match%lwt Zwmlib.Store.get_conf store with
-  | exception _ ->
-      Log.info (fun m -> m "Rebuilding configuration");
-      Zwmlib.Store.set_conf (Gendarme.default Zwmlib.Types.config ()) store
-  | _ -> Lwt.return_unit
-
 let init_data_dir () =
   let path = Runtime.var "data" in
   match%lwt Lwt_unix.stat path with
@@ -28,6 +22,27 @@ let init_data_dir () =
     | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
         Log.info (fun m -> m "Creating data directory");
         Lwt_unix.mkdir path 0o750
+
+let rebuild_config store = match%lwt Zwmlib.Store.get_conf store with
+  | exception _ ->
+      Log.info (fun m -> m "Rebuilding configuration");
+      Zwmlib.Store.set_conf (Gendarme.default Zwmlib.Types.config ()) store
+  | _ -> Lwt.return_unit
+
+let notify_systemd () = match Sys.getenv_opt "NOTIFY_SOCKET" with
+  | None -> ()
+  | Some sock ->
+      let sock = match sock.[0] with
+        | '@' -> "\000" ^ String.sub sock 1 (String.length sock - 1)
+        | _ -> sock in
+      let fd = Unix.socket ~cloexec:true Unix.PF_UNIX Unix.SOCK_DGRAM 0 in
+      try
+        Unix.connect fd (Unix.ADDR_UNIX sock);
+        let n = Unix.write_substring fd "READY=1" 0 7 in
+        Unix.close fd;
+        if n <> 7 then failwith "Truncated message"
+      with exn -> Log.warn (fun m -> Printexc.to_string exn
+                                     |> m "Failed signaling readiness to systemd: %s")
 
 let error_handler (Dream.{ condition; will_send_response; _ } as e) = match condition with
   | `Exn (Util.Bad_parameter parameter) when will_send_response ->
@@ -56,6 +71,7 @@ let init =
   let* () = rebuild_rtree store in
   let* () = init_data_dir () in
   let* () = rebuild_config Runtime.store in
+  notify_systemd ();
   Log.info (fun m -> m "Initialization completed");
   if Sys.unix
   then begin
