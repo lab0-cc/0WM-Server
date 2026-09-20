@@ -21,3 +21,6 @@ type scan = { s_pos : Zwmlib.Linalg.point3; s_ts : int; s_meas : Zwmlib.Dot11_iw
 type disp_one = { ssid : string option; signal : int; band : int }
 
 type disp = { d_pos : Zwmlib.Linalg.point3; d_meas : disp_one list } [@@marshal]
+
+type config_patch = { interface : string option; port : int option; aps : string list option;
+                      ssids : string list option } [@@marshal]

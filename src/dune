@@ -1,11 +1,17 @@
+(library
+ (name zwmapi)
+ (libraries gendarme-ezjsonm zwmlib)
+ (modules types)
+ (preprocess (pps lwt_ppx ppx_marshal -- --with-encoders ezjsonm)))
+
 (executable
   (name zwmd)
-  (libraries dream irmin-git.unix uuidm zwmlib)
-  (modules api api_debug api_heatmaps api_maps cors monitor runtime types util web web_static ws zwmd)
+  (libraries dream irmin-git.unix uuidm zwmapi zwmlib)
+  (modules api api_debug api_heatmaps api_maps cors monitor runtime util web web_static ws zwmd)
   (preprocess (pps lwt_ppx ppx_marshal)))
 
 (executable
   (name zwm)
-  (libraries cohttp-lwt-unix conduit-lwt cmdliner zwmlib)
-  (modules zwm zwm_fmt zwm_io)
+  (libraries cohttp-lwt-unix conduit-lwt cmdliner zwmapi zwmlib)
+  (modules zwm zwm_config zwm_fmt zwm_io)
   (preprocess (pps lwt_ppx ppx_marshal)))

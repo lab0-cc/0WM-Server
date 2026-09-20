@@ -1,4 +1,4 @@
-module T = Types
+module T = Zwmapi.Types
 open Zwmlib
 open Lwt.Syntax
 

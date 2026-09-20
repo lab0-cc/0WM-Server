@@ -1,7 +1,5 @@
 (** This module provides the types used throughout the API *)
 
-[%%marshal.load Json]
-
 open Zwmlib.Linalg
 
 type map = {
@@ -15,18 +13,17 @@ type map_rec = {
   mr_map : Zwmlib.Store.obj [@json "map"];
 } [@@marshal]
 
-type floorplan = { height : float [@json]; width : float [@json]; data : string [@json] }
-                 [@@marshal]
+type floorplan = { height : float; width : float; data : string } [@@marshal { tag = json }]
 
 type payload = {
-  anchors : Zwmlib.Anchor.set [@json];
-  floorplan : floorplan [@json];
-  name : string [@json];
-  structure : point list list [@json];
-  walls : point list list [@json];
-  zmin : float [@json];
-  zmax : float [@json];
-} [@@marshal]
+  anchors : Zwmlib.Anchor.set;
+  floorplan : floorplan;
+  name : string;
+  structure : point list list;
+  walls : point list list;
+  zmin : float;
+  zmax : float;
+} [@@marshal { tag = json }]
 
 type scan = {
   s_pos : point3 [@json "position"];
@@ -34,10 +31,12 @@ type scan = {
   s_meas : Zwmlib.Dot11_iwinfo.t list [@json "measurements"];
 } [@@marshal]
 
-type disp_one = { ssid : string option [@json]; signal : int [@json]; band : int [@json] }
-                [@@marshal]
+type disp_one = { ssid : string option; signal : int; band : int } [@@marshal { tag = json }]
 
 type disp = {
   d_pos : point3 [@json "position"];
   d_meas : disp_one list [@json "measurements"];
 } [@@marshal]
+
+type config_patch = { interface : string option; port : int option; aps : string list option;
+                      ssids : string list option } [@@marshal { omit_default; tag = json }]

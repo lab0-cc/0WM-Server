@@ -40,13 +40,27 @@ let get endpoint =
          raise Server_error)
     err
 
-let post endpoint json =
+let patch endpoint json =
   let uri = Uri.of_string ("http://zwmd/" ^ endpoint) in
   let ctx = ctx () in
   let headers = Header.init () |> fun h -> Header.add h "Content-Type" "application/json" in
   let body = Body.of_string json in
   Lwt.try_bind
-    (fun () -> Client.post ~ctx ~headers ~body uri)
+    (fun () -> Client.patch ~ctx ~headers ~body uri)
+    (fun (resp, _) -> match Response.status resp with
+     | #Code.success_status -> Lwt.return_unit
+     | code ->
+         Code.string_of_status code |> Printf.eprintf "Error: server returned %s\n";
+         raise Server_error)
+    err
+
+let put endpoint json =
+  let uri = Uri.of_string ("http://zwmd/" ^ endpoint) in
+  let ctx = ctx () in
+  let headers = Header.init () |> fun h -> Header.add h "Content-Type" "application/json" in
+  let body = Body.of_string json in
+  Lwt.try_bind
+    (fun () -> Client.put ~ctx ~headers ~body uri)
     (fun (resp, _) -> match Response.status resp with
      | #Code.success_status -> Lwt.return_unit
      | code ->
