@@ -7,8 +7,8 @@ lib.makeExtensible (self: {
   src = fetchFromGitHub {
     owner = "camlworks";
     repo = "dream";
-    rev = "d076a45d8285452d898395f69c4c78cf0dcfb8f0";
-    hash = "sha256-8xzSAKLt/dnRa21/sZ6BYIKZTWE/vvkI1GTLbdg6s2U=";
+    rev = "4718cb47264178d6d2181e0fcc2e8a8ff2170b5a";
+    hash = "sha256-aSfQdN7jxIGx4GtTe63tOSnn0WgsIhYvMPiUuavftWA=";
   };
 
   repo = makeOpamRepo self.src;
