@@ -1,0 +1,3 @@
+[submodule ".github/scripts/gen-changelog"]
+	path = .github/scripts/gen-changelog
+	url = https://github.com/lab0-cc/gen-changelog.git

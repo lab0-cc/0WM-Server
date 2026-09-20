@@ -35,6 +35,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
       - name: Add Noble backports (amd64)
         run: echo "deb http://archive.ubuntu.com/ubuntu noble-backports main universe multiverse restricted" | sudo tee /etc/apt/sources.list.d/noble-backports.list
         if: matrix.arch.os == 'ubuntu-24.04'
@@ -47,9 +49,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends debian-archive-keyring debootstrap git-buildpackage mmdebstrap sbuild/noble-backports schroot
       - name: Generate debian/changelog
-        run: ./gen-changelog -d debian/${{ matrix.target.suite }} -i 2026-01-04 -p 0wm-server > debian/changelog
+        run: .github/scripts/gen-changelog/gen-changelog -d debian/${{ matrix.target.suite }} -i 2026-01-04 -p 0wm-server > debian/changelog
       - name: Build package
-        run: gbp buildpackage -d ${{ matrix.target.suite }} -v
+        run: gbp buildpackage -d ${{ matrix.target.suite }} -v --lintian-opts --suppress-tags=spelling-error-in-changelog
       - name: Cleanup build directory
         run: rm -f build/*.build{,info}
       - name: Look for artifacts
