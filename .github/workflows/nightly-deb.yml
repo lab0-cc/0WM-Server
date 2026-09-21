@@ -67,7 +67,45 @@ jobs:
         if: steps.artifacts.outputs.upload == 'true'
         uses: actions/upload-artifact@v6
         with:
-          name: nightly-${{ matrix.target.distribution }}-${{ matrix.target.suite }}-${{ matrix.arch.name }}
+          name: ${{ matrix.target.suite }}-${{ matrix.arch.name }}
           path: build
           if-no-files-found: ignore
           retention-days: 7
+  post:
+    name: Release nightly build
+    needs: package-deb
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          mkdir -p release
+          for dir in artifacts/*/; do
+            artifact="$(basename "$dir")"
+            for file in "$dir"*.deb; do
+              base="$(basename "${file%.deb}")"
+              case "$base" in
+                *-dbgsym_*) continue;;
+              esac
+              mv "$file" "release/$base+${artifact%-*}.deb"
+            done
+          done
+      - uses: ncipollo/release-action@v1
+        with:
+          tag: nightly-deb
+          name: "Nightly Debian packages"
+          artifacts: "release/*"
+          allowUpdates: true
+          makeLatest: false
+          prerelease: true
+          removeArtifacts: true
+          body: |
+            Automated nightly build.
+
+            **Commit:** ${{ github.sha }}
+            **Run:** ${{ github.run_id }}
