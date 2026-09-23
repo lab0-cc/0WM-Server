@@ -63,8 +63,10 @@
         };
 
         scopes = pkgs.callPackage ./nix/scopes.nix {
+          camlimages = pkgs.callPackage ./nix/camlimages.nix { };
           cf = pkgs.callPackage ./nix/cf.nix { };
           dream = pkgs.callPackage ./nix/dream.nix { };
+          gluten = pkgs.callPackage ./nix/gluten.nix { };
           irmin = pkgs.callPackage ./nix/irmin.nix { };
           inherit query;
           src = lib.cleanSource ./.;
