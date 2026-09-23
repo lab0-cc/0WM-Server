@@ -36,7 +36,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          submodules: recursive
+          fetch-depth: 0
+      - name: Ignore commits after midnight
+        run: git reset --hard "$(TZ=UTC git rev-list -1 --before="$(date -d yesterday +%Y-%m-%d) 23:59:59" HEAD)"
+      - name : Initialize submodules
+        run: git submodule update --init
       - name: Add Noble backports (amd64)
         run: echo "deb http://archive.ubuntu.com/ubuntu noble-backports main universe multiverse restricted" | sudo tee /etc/apt/sources.list.d/noble-backports.list
         if: matrix.arch.os == 'ubuntu-24.04'
