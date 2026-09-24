@@ -3,8 +3,10 @@
   buildOpamProject',
   opam-repository,
 
+  camlimages,
   cf,
   dream,
+  gluten,
   irmin,
   query,
   src,
@@ -15,8 +17,10 @@ lib.makeExtensible (self: {
   default = buildOpamProject' {
     repos = [
       opam-repository
+      camlimages.repo
       cf.repo
       dream.repo
+      gluten.repo
       irmin.repo
     ];
     resolveArgs.with-test = true;
